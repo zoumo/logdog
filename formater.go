@@ -106,6 +106,7 @@ var (
 		CRITICAL: red,
 	}
 
+	// check if stderr is terminal, sometimes it is redirected to a file
 	isTerminal = terminal.IsTerminal(int(os.Stderr.Fd()))
 )
 
@@ -219,13 +220,3 @@ func (self JsonFormatter) Format(record *LogRecord) (string, error) {
 
 	return string(json_bytes), nil
 }
-
-// func (self *JsonFormatter) formatFields(fields Fields) {
-// 	fmt_fields := []string{"time", "message", "file", "level"}
-// 	// rename time -> fields.time, file -> fields.file
-// 	for _, k := range fmt_fields {
-// 		if v, ok := fields[k]; ok {
-// 			fields["fields."+k] = v
-// 		}
-// 	}
-// }

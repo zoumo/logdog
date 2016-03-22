@@ -54,7 +54,7 @@ func (self NullHandler) Close() error {
 // StreamHandler: A handler class which writes logging records,
 // appropriately formatted, to a stream.
 // Note that this class does not close the stream,
-// as sys.stdout or sys.stderr may be used.
+// as os.Stdout or os.Stderr may be used.
 type StreamHandler struct {
 	Out       io.Writer
 	Formatter Formatter
@@ -98,4 +98,59 @@ func (self StreamHandler) Handle(record *LogRecord) {
 
 func (self StreamHandler) Close() error {
 	return nil
+}
+
+// Simple File handler
+// It is similar to stream handler
+type FileHandler struct {
+	Path string
+	Out  *os.File
+
+	Name  string
+	Level int
+
+	Formatter Formatter
+	mu        sync.Mutex
+}
+
+func NewFileHandler(name string, path string) *FileHandler {
+	file, err := os.OpenFile(path, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0660)
+	if err != nil {
+		panic(fmt.Errorf("can not open file %s", path))
+	}
+
+	hdlr := &FileHandler{
+		Name:      name,
+		Out:       file,
+		Path:      path,
+		Formatter: DefaultFormatter,
+	}
+	return hdlr
+}
+
+func (self FileHandler) Emit(record *LogRecord) {
+	msg, err := self.Formatter.Format(record)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Format record failed, [%v]\n", err)
+	}
+	fmt.Fprintln(self.Out, msg)
+}
+
+func (self FileHandler) Filter(record *LogRecord) bool {
+	if record.Level < self.Level {
+		return true
+	}
+	return false
+}
+
+func (self FileHandler) Handle(record *LogRecord) {
+	filtered := self.Filter(record)
+	if !filtered {
+		self.mu.Lock()
+		defer self.mu.Unlock()
+		self.Emit(record)
+	}
+}
+func (self FileHandler) Close() error {
+	return self.Out.Close()
 }
