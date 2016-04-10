@@ -17,14 +17,12 @@ import (
 	"fmt"
 	"os"
 	"runtime"
+
+	. "github.com/zoumo/go-pythonic"
 )
 
 const (
 	DEFAULT_FUNC_CALL_DEPTH = 2
-)
-
-var (
-	loggers = make(map[string]*Logger)
 )
 
 // All log entries pass through the formatter before logged to Out. The
@@ -39,6 +37,31 @@ type Logger struct {
 	Level         int
 	funcCallDepth int
 	runtimeCaller bool
+	ConfigLoader
+}
+
+func (self *Logger) LoadConfig(c map[string]interface{}) error {
+	config, err := DictReflect(c)
+	if err != nil {
+		return nil
+	}
+	self.Name = config.MustGetString("name", "")
+
+	self.Level = GetLevelByName(config.MustGetString("level", "NOTHING"))
+	self.runtimeCaller = config.MustGetBool("enable_runtime_caller", false)
+
+	_handlers := config.MustGetArray("handlers", make([]interface{}, 0))
+
+	for _, h := range _handlers {
+		hdlr := GetHandler(h.(string))
+		if hdlr == nil {
+			panic(fmt.Errorf("can not find handler: %s", h))
+		}
+		self.AddHandler(hdlr)
+	}
+
+	return nil
+
 }
 
 func (self *Logger) EnableRuntimeCaller(enable bool) {
@@ -155,38 +178,4 @@ func (self Logger) Critical(args ...interface{}) {
 func (self Logger) Panic(msg string, args ...interface{}) {
 	self.log(CRITICAL, "", args...)
 	panic("CRITICAL")
-}
-
-// Get a logger by name, if not, create one
-func GetLogger(name string) *Logger {
-	if name == "" {
-		name = "root"
-	}
-	var logger *Logger
-	var ok bool
-	logger, ok = loggers[name]
-	if ok {
-		return logger
-	}
-	// create new logger
-	logger = new(Logger)
-	// set name
-	logger.Name = name
-	// default func call depth is 2
-	logger.funcCallDepth = DEFAULT_FUNC_CALL_DEPTH
-	// enable analyse runtime caller
-	logger.runtimeCaller = true
-
-	// check twice
-	// maybe sb. adds logger when this logger is creating
-	_logger, _ok := loggers[name]
-	if _ok {
-		return _logger
-	}
-
-	// lock
-	mu.Lock()
-	defer mu.Unlock()
-	loggers[name] = logger
-	return logger
 }

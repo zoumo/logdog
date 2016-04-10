@@ -56,6 +56,25 @@ func TestIsTerminal(t *testing.T) {
 	assert.True(t, isTerminal)
 }
 
+func TestSimpleFormatterLoadConfig(t *testing.T) {
+	formatter := NewSimpleFormatter()
+	formatter.LoadConfig(Config{
+		"enable_colors": true,
+	})
+
+	assert.Equal(t, formatter.Fmt, DEFAULT_FORMAT)
+	assert.Equal(t, formatter.DateFmt, DEFAULT_TIME_FORMAT)
+	assert.True(t, formatter.EnableColors)
+}
+
+func TestJsonFormatterLoadConfig(t *testing.T) {
+	formatter := NewJsonFormatter()
+	formatter.LoadConfig(Config{
+		"datefmt": "test",
+	})
+	assert.Equal(t, formatter.Datefmt, "test")
+}
+
 func do(b *testing.B, formatter Formatter, fields Fields) {
 
 	record := NewLogRecord("", 0, "file/test", "func", 0, "", fields)

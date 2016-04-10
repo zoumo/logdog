@@ -22,17 +22,42 @@ import (
 func TestStreamHandler(t *testing.T) {
 	record := NewLogRecord(name, DEBUG, pathname, fun, line, "%s", "debug", fields)
 	record2 := NewLogRecord(name, INFO, pathname, fun, line, "%s", "success", fields)
-	// handler, _ := NewStreamHandler(name).(*StreamHandler)
-	handler := NewStreamHandler(name)
-	handler.Level = INFO
+	handler := NewStreamHandler()
+	// handler.Level = INFO
+	err := handler.LoadConfig(Config{
+		"level": "INFO",
+	})
+	assert.Nil(t, err)
+	assert.Equal(t, handler.Level, INFO)
+	assert.Equal(t, handler.Formatter, TerminalFormatter)
 
-	handler.Handle(record)
-	handler.Handle(record2)
-	handler.Emit(record)
-	handler.Emit(record2)
+	// handler.Handle(record)
+	// handler.Handle(record2)
+	// handler.Emit(record)
+	// handler.Emit(record2)
 
 	assert.True(t, handler.Filter(record))
 	assert.False(t, handler.Filter(record2))
 	assert.Nil(t, handler.Close())
 
+}
+
+func TestFileHandler(t *testing.T) {
+	record := NewLogRecord(name, DEBUG, pathname, fun, line, "%s", "debug", fields)
+	record2 := NewLogRecord(name, INFO, pathname, fun, line, "%s", "success", fields)
+	handler := NewFileHandler()
+
+	err := handler.LoadConfig(Config{
+		"level":     "INFO",
+		"filename":  "./test",
+		"formatter": "terminal",
+	})
+	assert.Nil(t, err)
+	assert.Equal(t, handler.Path, "./test")
+	assert.Equal(t, handler.Formatter, TerminalFormatter)
+	assert.Equal(t, handler.Level, INFO)
+
+	assert.True(t, handler.Filter(record))
+	assert.False(t, handler.Filter(record2))
+	assert.Nil(t, handler.Close())
 }

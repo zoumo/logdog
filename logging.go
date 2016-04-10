@@ -66,6 +66,15 @@ func GetLevelName(level int) string {
 	}
 }
 
+func GetLevelByName(levelname string) int {
+	v, ok := levelNames[levelname]
+	if ok {
+		return v
+	} else {
+		panic("can not find level by name: " + levelname)
+	}
+}
+
 // Add new level and level name
 func AddLevelName(level int, levelName string) {
 	mu.Lock()
@@ -147,5 +156,5 @@ func Panic(msg string, args ...interface{}) {
 }
 
 func init() {
-	root.AddHandler(NewStreamHandler("root"))
+	root.AddHandler(NewStreamHandler())
 }

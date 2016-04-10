@@ -24,17 +24,18 @@ func TestLogger(t *testing.T) {
 	logger := GetLogger("test")
 	assert.Equal(t, "test", logger.Name)
 
-	logger.AddHandler(NewStreamHandler("test"))
+	logger.AddHandler(NewStreamHandler())
 	assert.Len(t, logger.Handlers, 1)
 
-	logger.SetLevel(NOTICE)
-	assert.Equal(t, logger.Level, NOTICE)
+	logger.SetLevel(INFO)
+	assert.Equal(t, logger.Level, INFO)
 
 	logger.SetFuncCallDepth(3)
 	assert.Equal(t, 3, logger.funcCallDepth)
 
 	logger.EnableRuntimeCaller(false)
 	logger.Debug("test debug") // filtered
+	logger.Info("test info")
 	logger.Critical("test critical")
 
 }
@@ -42,10 +43,10 @@ func TestLogger(t *testing.T) {
 func TestJsonLogger(t *testing.T) {
 	logger := GetLogger("json")
 	formatter := JsonFormatter{}
-	handler := NewStreamHandler("json")
+	handler := NewStreamHandler()
 	handler.Formatter = formatter
 	logger.AddHandler(handler)
-	logger.Notice("this is json formatter1")
+	logger.Info("this is json formatter1")
 	logger.Notice("this is json formatter2", fields)
 
 }

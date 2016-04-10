@@ -20,13 +20,22 @@ import (
 	"os"
 	"regexp"
 
-	"github.com/zoumo/when.go"
+	. "github.com/zoumo/go-pythonic"
+	"github.com/zoumo/go-when"
 	"golang.org/x/crypto/ssh/terminal"
 )
 
 // The Formatter interface to convert a LogRecord to string
 type Formatter interface {
 	Format(*LogRecord) (string, error)
+}
+
+// Return the creation time of the specified LogRecord as formatted text.
+func FormatTime(record *LogRecord, datefmt string) string {
+	if datefmt == "" {
+		datefmt = DEFAULT_TIME_FORMAT
+	}
+	return when.Strftime(&record.Time, datefmt)
 }
 
 // Default Formatter instances are used to convert a LogRecord to text.
@@ -54,18 +63,11 @@ type Formatter interface {
 // %(color)           print color
 // %(end_color)       reset color
 //
-// There will not provide New() function to create SimpleFormatter instance
-// You should instantiate your own:
-// var formatter = SimpleFormatter{
-// 	Fmt: "%(color)[%(time)] [%(levelname)] [%(filename):%(lineno)]%(end_color) %(message)"
-// 	DateFmt: "%Y-%m-%d %H:%M:%S"
-// }
-// or use default config (the same as above):
-// var formatter = SimpleFormatter{}
 type SimpleFormatter struct {
 	Fmt          string
 	DateFmt      string
 	EnableColors bool
+	ConfigLoader
 }
 
 const (
@@ -120,12 +122,26 @@ func colorHash(level int) string {
 	return fmt.Sprintf("\033[%dm", color)
 }
 
-// Return the creation time of the specified LogRecord as formatted text.
-func FormatTime(record *LogRecord, datefmt string) string {
-	if datefmt == "" {
-		datefmt = DEFAULT_TIME_FORMAT
+func NewSimpleFormatter() *SimpleFormatter {
+	return &SimpleFormatter{
+		Fmt:          DEFAULT_FORMAT,
+		DateFmt:      DEFAULT_TIME_FORMAT,
+		EnableColors: false,
 	}
-	return when.Strftime(&record.Time, datefmt)
+}
+
+func (self *SimpleFormatter) LoadConfig(c map[string]interface{}) error {
+	config, err := DictReflect(c)
+	if err != nil {
+		return err
+	}
+
+	self.Fmt = config.MustGetString("fmt", DEFAULT_FORMAT)
+	self.DateFmt = config.MustGetString("datefmt", DEFAULT_TIME_FORMAT)
+	self.EnableColors = config.MustGetBool("enable_colors", false)
+
+	return nil
+
 }
 
 // Format the specified record as text.
@@ -196,6 +212,22 @@ type JsonFormatter struct {
 	Datefmt string
 }
 
+func NewJsonFormatter() *JsonFormatter {
+	return &JsonFormatter{
+		Datefmt: DEFAULT_TIME_FORMAT,
+	}
+}
+
+func (self *JsonFormatter) LoadConfig(c map[string]interface{}) error {
+	config, err := DictReflect(c)
+	if err != nil {
+		return err
+	}
+
+	self.Datefmt = config.MustGetString("datefmt", DEFAULT_TIME_FORMAT)
+	return nil
+}
+
 func (self JsonFormatter) Format(record *LogRecord) (string, error) {
 	fields := make(Fields, len(record.Fields)+4)
 	for k, v := range record.Fields {
@@ -219,4 +251,16 @@ func (self JsonFormatter) Format(record *LogRecord) (string, error) {
 	}
 
 	return string(json_bytes), nil
+}
+
+func init() {
+	RegisterConstructor("SimpleFormatter", func() ConfigLoader {
+		return NewSimpleFormatter()
+	})
+	RegisterConstructor("JsonFormatter", func() ConfigLoader {
+		return NewJsonFormatter()
+	})
+
+	RegisterFormatter("default", DefaultFormatter)
+	RegisterFormatter("terminal", TerminalFormatter)
 }

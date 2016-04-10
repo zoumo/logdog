@@ -34,11 +34,6 @@ var (
 	line     = 1
 )
 
-func TestFields(t *testing.T) {
-
-	t.Log(fields)
-}
-
 func TestLogRecord(t *testing.T) {
 
 	record := NewLogRecord(name, level, pathname, fun, line, "%s", "right fields", fields)

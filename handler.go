@@ -14,10 +14,13 @@
 package logtar
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"os"
 	"sync"
+
+	. "github.com/zoumo/go-pythonic"
 )
 
 type Handler interface {
@@ -33,6 +36,15 @@ type Handler interface {
 
 type NullHandler struct {
 	Name string
+	ConfigLoader
+}
+
+func NewNullHandler() *NullHandler {
+	return &NullHandler{}
+}
+
+func (self *NullHandler) LoadConfig(config map[string]interface{}) error {
+	return nil
 }
 
 func (self NullHandler) Handle(*LogRecord) {
@@ -47,7 +59,7 @@ func (self NullHandler) Emit(*LogRecord) {
 	// do nothing
 }
 
-func (self NullHandler) Close() error {
+func (self *NullHandler) Close() error {
 	return nil
 }
 
@@ -61,15 +73,36 @@ type StreamHandler struct {
 	Name      string
 	Level     int
 	mu        sync.Mutex
+	ConfigLoader
 }
 
-func NewStreamHandler(name string) *StreamHandler {
+func NewStreamHandler() *StreamHandler {
 	return &StreamHandler{
-		Name:      name,
+		Name:      "",
 		Out:       os.Stderr,
 		Formatter: TerminalFormatter,
-		Level:     0,
+		Level:     NOTHING,
 	}
+}
+
+func (self *StreamHandler) LoadConfig(c map[string]interface{}) error {
+	config, err := DictReflect(c)
+	if err != nil {
+		return err
+	}
+
+	self.Name = config.MustGetString("name", "")
+
+	self.Level = GetLevelByName(config.MustGetString("level", "NOTHING"))
+
+	_formatter := config.MustGetString("formatter", "terminal")
+	formatter := GetFormatter(_formatter)
+	if formatter == nil {
+		return fmt.Errorf("can not find formatter: %s", _formatter)
+	}
+	self.Formatter = formatter
+
+	return nil
 }
 
 func (self StreamHandler) Emit(record *LogRecord) {
@@ -87,7 +120,7 @@ func (self StreamHandler) Filter(record *LogRecord) bool {
 	return false
 }
 
-func (self StreamHandler) Handle(record *LogRecord) {
+func (self *StreamHandler) Handle(record *LogRecord) {
 	filtered := self.Filter(record)
 	if !filtered {
 		self.mu.Lock()
@@ -96,12 +129,12 @@ func (self StreamHandler) Handle(record *LogRecord) {
 	}
 }
 
-func (self StreamHandler) Close() error {
+func (self *StreamHandler) Close() error {
 	return nil
 }
 
-// Simple File handler
-// It is similar to stream handler
+// File handler
+// It is similar to SteamHandler
 type FileHandler struct {
 	Path string
 	Out  *os.File
@@ -111,24 +144,53 @@ type FileHandler struct {
 
 	Formatter Formatter
 	mu        sync.Mutex
+	ConfigLoader
 }
 
-func NewFileHandler(name string, path string) *FileHandler {
-	file, err := os.OpenFile(path, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0660)
-	if err != nil {
-		panic(fmt.Errorf("can not open file %s", path))
-	}
+func NewFileHandler() *FileHandler {
 
-	hdlr := &FileHandler{
-		Name:      name,
-		Out:       file,
-		Path:      path,
+	return &FileHandler{
+		Name:      "",
+		Level:     NOTHING,
 		Formatter: DefaultFormatter,
 	}
-	return hdlr
 }
 
-func (self FileHandler) Emit(record *LogRecord) {
+func (self *FileHandler) LoadConfig(c map[string]interface{}) error {
+	config, err := DictReflect(c)
+	if err != nil {
+		return nil
+	}
+	// get name
+	self.Name = config.MustGetString("name", "")
+
+	// get path and file
+	path := config.MustGetString("filename", "")
+	if path == "" {
+		return errors.New("Should provide a valid file path")
+	}
+	file, err := os.OpenFile(path, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0660)
+	if err != nil {
+		panic(fmt.Errorf("Can not open file %s", path))
+	}
+	self.Path = path
+	self.Out = file
+
+	// get level
+	self.Level = GetLevelByName(config.MustGetString("level", "NOTHING"))
+
+	// get formatter
+	_formatter := config.MustGetString("formatter", "default")
+	formatter := GetFormatter(_formatter)
+	if formatter == nil {
+		return fmt.Errorf("can not find formatter: %s", _formatter)
+	}
+	self.Formatter = formatter
+
+	return nil
+}
+
+func (self *FileHandler) Emit(record *LogRecord) {
 	msg, err := self.Formatter.Format(record)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Format record failed, [%v]\n", err)
@@ -143,7 +205,10 @@ func (self FileHandler) Filter(record *LogRecord) bool {
 	return false
 }
 
-func (self FileHandler) Handle(record *LogRecord) {
+func (self *FileHandler) Handle(record *LogRecord) {
+	if self.Out == nil {
+		panic("you should set output file before use this handler")
+	}
 	filtered := self.Filter(record)
 	if !filtered {
 		self.mu.Lock()
@@ -151,6 +216,22 @@ func (self FileHandler) Handle(record *LogRecord) {
 		self.Emit(record)
 	}
 }
-func (self FileHandler) Close() error {
+func (self *FileHandler) Close() error {
+	if self.Out == nil {
+		return nil
+	}
 	return self.Out.Close()
+}
+
+func init() {
+	RegisterConstructor("NullHandler", func() ConfigLoader {
+		return NewNullHandler()
+	})
+	RegisterConstructor("StreamHandler", func() ConfigLoader {
+		return NewStreamHandler()
+	})
+	RegisterConstructor("FileHandler", func() ConfigLoader {
+		return NewFileHandler()
+	})
+
 }
