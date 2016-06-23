@@ -76,8 +76,8 @@ func (self *Logger) SetLevel(level int) {
 	self.Level = level
 }
 
-func (self *Logger) AddHandler(handler Handler) {
-	self.Handlers = append(self.Handlers, handler)
+func (self *Logger) AddHandler(handlers ...Handler) {
+	self.Handlers = append(self.Handlers, handlers...)
 }
 
 func (self Logger) log(level int, msg string, args ...interface{}) {
@@ -128,6 +128,10 @@ func (self Logger) Close() error {
 	return nil
 }
 
+func (self Logger) Logf(level int, msg string, args ...interface{}) {
+	self.log(level, msg, args...)
+}
+
 func (self Logger) Debugf(msg string, args ...interface{}) {
 	self.log(DEBUG, msg, args...)
 }
@@ -152,6 +156,10 @@ func (self Logger) Criticalf(msg string, args ...interface{}) {
 func (self Logger) Panicf(msg string, args ...interface{}) {
 	self.log(CRITICAL, msg, args...)
 	panic("CRITICAL")
+}
+
+func (self Logger) Log(level int, args ...interface{}) {
+	self.log(level, "", args...)
 }
 
 func (self Logger) Debug(args ...interface{}) {

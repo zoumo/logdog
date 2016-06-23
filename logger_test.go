@@ -14,6 +14,7 @@
 package logdog
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -33,10 +34,17 @@ func TestLogger(t *testing.T) {
 	logger.SetFuncCallDepth(3)
 	assert.Equal(t, 3, logger.funcCallDepth)
 
-	logger.EnableRuntimeCaller(false)
+	// echo
+	logger.SetFuncCallDepth(2)
+	logger.EnableRuntimeCaller(true)
 	logger.Debug("test debug") // filtered
-	logger.Info("test info")
-	logger.Critical("test critical")
+	logger.SetLevel(NOTHING)
+	logger.Debug("who is your daddy", Fields{"who": "jim"})
+	logger.Info("logdog is useful", Fields{"agree": "yes"})
+	logger.Warn("warning warning", Fields{"x": "man"})
+	logger.Notice("this notice is impotant", Fields{"x": "man"})
+	logger.Error("error error..", Fields{"x": "man"})
+	logger.Critical("I have no idea !", Fields{"x": "man"})
 
 }
 
@@ -46,6 +54,7 @@ func TestJsonLogger(t *testing.T) {
 	handler := NewStreamHandler()
 	handler.Formatter = formatter
 	logger.AddHandler(handler)
+	fmt.Println("========================================")
 	logger.Info("this is json formatter1")
 	logger.Notice("this is json formatter2", fields)
 

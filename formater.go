@@ -17,8 +17,9 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"os"
 	"regexp"
+	"runtime"
+	"syscall"
 
 	. "github.com/zoumo/go-pythonic"
 	"github.com/zoumo/go-when"
@@ -63,7 +64,7 @@ func FormatTime(record *LogRecord, datefmt string) string {
 // %(color)           print color
 // %(end_color)       reset color
 //
-type SimpleFormatter struct {
+type TextFormatter struct {
 	Fmt          string
 	DateFmt      string
 	EnableColors bool
@@ -85,13 +86,13 @@ const (
 var (
 	// TODO support %[(name)][flags][width].[precision]typecode
 	LogRecordFieldRegexp = regexp.MustCompile(`\%\(\w+\)`)
-	// default formatter is an simple formatter without color
-	DefaultFormatter = SimpleFormatter{
+	// default formatter is an text formatter without color
+	DefaultFormatter = TextFormatter{
 		Fmt:     DEFAULT_FORMAT,
 		DateFmt: DEFAULT_TIME_FORMAT,
 	}
-	// terminal formatter is an simple formatter with color
-	TerminalFormatter = SimpleFormatter{
+	// terminal formatter is an text formatter with color
+	TerminalFormatter = TextFormatter{
 		Fmt:          DEFAULT_FORMAT,
 		DateFmt:      DEFAULT_TIME_FORMAT,
 		EnableColors: true,
@@ -109,7 +110,8 @@ var (
 	}
 
 	// check if stderr is terminal, sometimes it is redirected to a file
-	isTerminal = terminal.IsTerminal(int(os.Stderr.Fd()))
+	isTerminal      = terminal.IsTerminal(syscall.Stderr)
+	isColorTerminal = isTerminal && (runtime.GOOS != "windows")
 )
 
 // Return color for deferent level, default is white
@@ -122,15 +124,15 @@ func colorHash(level int) string {
 	return fmt.Sprintf("\033[%dm", color)
 }
 
-func NewSimpleFormatter() *SimpleFormatter {
-	return &SimpleFormatter{
+func NewTextFormatter() *TextFormatter {
+	return &TextFormatter{
 		Fmt:          DEFAULT_FORMAT,
 		DateFmt:      DEFAULT_TIME_FORMAT,
 		EnableColors: false,
 	}
 }
 
-func (self *SimpleFormatter) LoadConfig(c map[string]interface{}) error {
+func (self *TextFormatter) LoadConfig(c map[string]interface{}) error {
 	config, err := DictReflect(c)
 	if err != nil {
 		return err
@@ -145,7 +147,7 @@ func (self *SimpleFormatter) LoadConfig(c map[string]interface{}) error {
 }
 
 // Format the specified record as text.
-func (self SimpleFormatter) Format(record *LogRecord) (string, error) {
+func (self TextFormatter) Format(record *LogRecord) (string, error) {
 
 	fmt_str := self.Fmt
 	if fmt_str == "" {
@@ -156,7 +158,7 @@ func (self SimpleFormatter) Format(record *LogRecord) (string, error) {
 	// 防止需要多次添加颜色, 减少函数调用
 	color := ""
 	end_color := ""
-	if isTerminal && self.EnableColors {
+	if isColorTerminal && self.EnableColors {
 		color = colorHash(record.Level)
 		end_color = "\033[0m" // reset color
 	}
@@ -196,7 +198,7 @@ func (self SimpleFormatter) Format(record *LogRecord) (string, error) {
 	return str, nil
 }
 
-func (self SimpleFormatter) formatFields(record *LogRecord) string {
+func (self TextFormatter) formatFields(record *LogRecord) string {
 
 	b := &bytes.Buffer{}
 	b.WriteString("%(color)")
@@ -254,8 +256,8 @@ func (self JsonFormatter) Format(record *LogRecord) (string, error) {
 }
 
 func init() {
-	RegisterConstructor("SimpleFormatter", func() ConfigLoader {
-		return NewSimpleFormatter()
+	RegisterConstructor("TextFormatter", func() ConfigLoader {
+		return NewTextFormatter()
 	})
 	RegisterConstructor("JsonFormatter", func() ConfigLoader {
 		return NewJsonFormatter()

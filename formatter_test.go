@@ -53,11 +53,16 @@ var largeFields = Fields{
 }
 
 func TestIsTerminal(t *testing.T) {
-	assert.True(t, isTerminal)
+	// I have no idea why this unit test can not pass
+	// but it does not affect the usage
+	// there is something wrong with syscall.SYS_IOCTL in testing
+	msg := "I have no idea why this unit test can not pass\nbut it does not affect the usage"
+	assert.True(t, isTerminal, msg)
+	assert.True(t, isColorTerminal, msg)
 }
 
-func TestSimpleFormatterLoadConfig(t *testing.T) {
-	formatter := NewSimpleFormatter()
+func TestTextFormatterLoadConfig(t *testing.T) {
+	formatter := NewTextFormatter()
 	formatter.LoadConfig(Config{
 		"enable_colors": true,
 	})
@@ -90,20 +95,20 @@ func do(b *testing.B, formatter Formatter, fields Fields) {
 	}
 }
 
-func BenchmarkSmallSimpleFormatter(b *testing.B) {
-	do(b, &SimpleFormatter{EnableColors: false}, smallFields)
+func BenchmarkSmallTextFormatter(b *testing.B) {
+	do(b, &TextFormatter{EnableColors: false}, smallFields)
 }
 
-func BenchmarkLargeSimpleFormatter(b *testing.B) {
-	do(b, &SimpleFormatter{EnableColors: false}, largeFields)
+func BenchmarkLargeTextFormatter(b *testing.B) {
+	do(b, &TextFormatter{EnableColors: false}, largeFields)
 }
 
-func BenchmarkSmallColoredSimpleFormatter(b *testing.B) {
-	do(b, &SimpleFormatter{EnableColors: true}, smallFields)
+func BenchmarkSmallColoredTextFormatter(b *testing.B) {
+	do(b, &TextFormatter{EnableColors: true}, smallFields)
 }
 
-func BenchmarkLargeColoredSimpleFormatter(b *testing.B) {
-	do(b, &SimpleFormatter{EnableColors: true}, largeFields)
+func BenchmarkLargeColoredTextFormatter(b *testing.B) {
+	do(b, &TextFormatter{EnableColors: true}, largeFields)
 }
 
 func BenchmarkSmallJsonFormatter(b *testing.B) {

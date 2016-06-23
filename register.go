@@ -121,9 +121,11 @@ func GetLogger(name string) *Logger {
 func DisableExistingLoggers() {
 	// close all existing logger
 	loggers.mu.Lock()
-	for _, logger := range loggers {
-		logger.Close()
+	for _, logger := range loggers.data {
+		_logger := logger.(*Logger)
+		_logger.Close()
 	}
+	loggers.data = make(map[string]interface{})
 	loggers.mu.Unlock()
 
 	loggers = NewRegister()

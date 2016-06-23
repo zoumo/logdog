@@ -30,7 +30,7 @@ type Handler interface {
 	Filter(*LogRecord) bool
 	// Emit log record to output - e.g. stderr or file
 	Emit(*LogRecord)
-	// Close output stream, if not return nil
+	// Close output stream, if not return error
 	Close() error
 }
 

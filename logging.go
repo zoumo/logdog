@@ -84,8 +84,8 @@ func AddLevelName(level int, levelName string) {
 }
 
 // This function is an alias of root.AddHandler
-func AddHandler(handler Handler) {
-	root.AddHandler(handler)
+func AddHandler(handlers ...Handler) {
+	root.AddHandler(handlers...)
 }
 
 // This function is an alias of root.EnableRuntimeCaller
