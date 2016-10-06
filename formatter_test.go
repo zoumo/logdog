@@ -59,6 +59,7 @@ func TestIsTerminal(t *testing.T) {
 	msg := "I have no idea why this unit test can not pass\nbut it does not affect the usage"
 	assert.True(t, isTerminal, msg)
 	assert.True(t, isColorTerminal, msg)
+
 }
 
 func TestTextFormatterLoadConfig(t *testing.T) {

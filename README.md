@@ -214,9 +214,7 @@ func main() {
 ```
 
 # Requirement
-- [github.com/zoumo/go-pythonic](https://github.com/zoumo/go-when)
-- [github.com/zoumo/go-when](https://github.com/zoumo/go-when)
-- [golang.org/x/crypto/ssh/terminal ](https://github.com/golang/crypto) moved to github.com/golang/crypto/ssh/terminal
+- [github.com/docker/docker/pkg/term](https://github.com/docker/docker/pkg/term)
 - [github.com/stretchr/testify/assert](https://github.com/stretchr/testify/assert)
 
 # TODO

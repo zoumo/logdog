@@ -20,7 +20,7 @@ import (
 	"os"
 	"sync"
 
-	. "github.com/zoumo/go-pythonic"
+	. "github.com/zoumo/logdog/pkg/pythonic"
 )
 
 type Handler interface {

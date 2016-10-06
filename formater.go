@@ -21,9 +21,9 @@ import (
 	"runtime"
 	"syscall"
 
-	. "github.com/zoumo/go-pythonic"
-	"github.com/zoumo/go-when"
-	"golang.org/x/crypto/ssh/terminal"
+	"github.com/docker/docker/pkg/term"
+	. "github.com/zoumo/logdog/pkg/pythonic"
+	"github.com/zoumo/logdog/pkg/when"
 )
 
 // The Formatter interface to convert a LogRecord to string
@@ -31,7 +31,7 @@ type Formatter interface {
 	Format(*LogRecord) (string, error)
 }
 
-// Return the creation time of the specified LogRecord as formatted text.
+// FormatTime Return the creation time of the specified LogRecord as formatted text.
 func FormatTime(record *LogRecord, datefmt string) string {
 	if datefmt == "" {
 		datefmt = DEFAULT_TIME_FORMAT
@@ -110,7 +110,7 @@ var (
 	}
 
 	// check if stderr is terminal, sometimes it is redirected to a file
-	isTerminal      = terminal.IsTerminal(syscall.Stderr)
+	isTerminal      = term.IsTerminal(uintptr(syscall.Stderr))
 	isColorTerminal = isTerminal && (runtime.GOOS != "windows")
 )
 
