@@ -22,8 +22,8 @@ import (
 
 type Fields map[string]interface{}
 
-func (self Fields) String() string {
-	return fmt.Sprintf("%#v", (map[string]interface{})(self))
+func (f Fields) String() string {
+	return fmt.Sprintf("%#v", (map[string]interface{})(f))
 }
 
 type LogRecord struct {
@@ -74,31 +74,31 @@ func NewLogRecord(name string, level int, pathname string, funcname string, line
 
 // Format record message by msg and args
 // if msg == "" {
-//     msg = fmt.Sprint(self.Args...)
+//     msg = fmt.Sprint(lr.Args...)
 // } else {
-//     msg = fmt.Sprintf(self.Msg, self.Args...)
+//     msg = fmt.Sprintf(lr.Msg, lr.Args...)
 // }
-func (self LogRecord) GetMessage() string {
-	msg := self.Msg
+func (lr LogRecord) GetMessage() string {
+	msg := lr.Msg
 	if msg == "" {
-		msg = fmt.Sprint(self.Args...)
+		msg = fmt.Sprint(lr.Args...)
 	} else {
-		msg = fmt.Sprintf(self.Msg, self.Args...)
+		msg = fmt.Sprintf(lr.Msg, lr.Args...)
 	}
 	return msg
 }
 
 // Extract fields (Fields) from args
 // Fields should be the last element in args
-func (self *LogRecord) ExtractFieldsFromArgs() {
-	args_len := len(self.Args)
+func (lr *LogRecord) ExtractFieldsFromArgs() {
+	args_len := len(lr.Args)
 	if args_len == 0 {
 		return
 	}
 
-	if fields, ok := self.Args[args_len-1].(Fields); ok {
-		self.Args = self.Args[:args_len-1]
-		self.Fields = fields
+	if fields, ok := lr.Args[args_len-1].(Fields); ok {
+		lr.Args = lr.Args[:args_len-1]
+		lr.Fields = fields
 	}
 
 }

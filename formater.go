@@ -22,7 +22,7 @@ import (
 	"syscall"
 
 	"github.com/docker/docker/pkg/term"
-	. "github.com/zoumo/logdog/pkg/pythonic"
+	"github.com/zoumo/logdog/pkg/pythonic"
 	"github.com/zoumo/logdog/pkg/when"
 )
 
@@ -132,37 +132,37 @@ func NewTextFormatter() *TextFormatter {
 	}
 }
 
-func (self *TextFormatter) LoadConfig(c map[string]interface{}) error {
-	config, err := DictReflect(c)
+func (tf *TextFormatter) LoadConfig(c map[string]interface{}) error {
+	config, err := pythonic.DictReflect(c)
 	if err != nil {
 		return err
 	}
 
-	self.Fmt = config.MustGetString("fmt", DEFAULT_FORMAT)
-	self.DateFmt = config.MustGetString("datefmt", DEFAULT_TIME_FORMAT)
-	self.EnableColors = config.MustGetBool("enable_colors", false)
+	tf.Fmt = config.MustGetString("fmt", DEFAULT_FORMAT)
+	tf.DateFmt = config.MustGetString("datefmt", DEFAULT_TIME_FORMAT)
+	tf.EnableColors = config.MustGetBool("enable_colors", false)
 
 	return nil
 
 }
 
 // Format the specified record as text.
-func (self TextFormatter) Format(record *LogRecord) (string, error) {
+func (tf TextFormatter) Format(record *LogRecord) (string, error) {
 
-	fmt_str := self.Fmt
+	fmt_str := tf.Fmt
 	if fmt_str == "" {
 		// Don't open color by default
 		fmt_str = DEFAULT_FORMAT
-		self.EnableColors = false
+		tf.EnableColors = false
 	}
 	// 防止需要多次添加颜色, 减少函数调用
 	color := ""
 	end_color := ""
-	if isColorTerminal && self.EnableColors {
+	if isColorTerminal && tf.EnableColors {
 		color = colorHash(record.Level)
 		end_color = "\033[0m" // reset color
 	}
-	fmt_str += self.formatFields(record)
+	fmt_str += tf.formatFields(record)
 
 	// replace %(field) with actual record value
 	str := LogRecordFieldRegexp.ReplaceAllStringFunc(fmt_str, func(match string) string {
@@ -172,7 +172,7 @@ func (self TextFormatter) Format(record *LogRecord) (string, error) {
 		case "name":
 			return record.Name
 		case "time":
-			return FormatTime(record, self.DateFmt)
+			return FormatTime(record, tf.DateFmt)
 		case "levelno":
 			return fmt.Sprintf("%d", record.Level)
 		case "levelname":
@@ -198,7 +198,7 @@ func (self TextFormatter) Format(record *LogRecord) (string, error) {
 	return str, nil
 }
 
-func (self TextFormatter) formatFields(record *LogRecord) string {
+func (tf TextFormatter) formatFields(record *LogRecord) string {
 
 	b := &bytes.Buffer{}
 	b.WriteString("%(color)")
@@ -220,25 +220,25 @@ func NewJsonFormatter() *JsonFormatter {
 	}
 }
 
-func (self *JsonFormatter) LoadConfig(c map[string]interface{}) error {
-	config, err := DictReflect(c)
+func (jf *JsonFormatter) LoadConfig(c map[string]interface{}) error {
+	config, err := pythonic.DictReflect(c)
 	if err != nil {
 		return err
 	}
 
-	self.Datefmt = config.MustGetString("datefmt", DEFAULT_TIME_FORMAT)
+	jf.Datefmt = config.MustGetString("datefmt", DEFAULT_TIME_FORMAT)
 	return nil
 }
 
-func (self JsonFormatter) Format(record *LogRecord) (string, error) {
+func (jf JsonFormatter) Format(record *LogRecord) (string, error) {
 	fields := make(Fields, len(record.Fields)+4)
 	for k, v := range record.Fields {
 		fields[k] = v
 	}
-	// self.formatFields(fields)
+	// jf.formatFields(fields)
 	data := make(map[string]interface{})
 
-	data["time"] = FormatTime(record, self.Datefmt)
+	data["time"] = FormatTime(record, jf.Datefmt)
 	data["message"] = record.GetMessage()
 	data["file"] = record.FileName
 	data["line"] = record.Line

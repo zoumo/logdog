@@ -18,8 +18,7 @@ import (
 	"os"
 	"runtime"
 
-	. "github.com/zoumo/logdog/pkg/pythonic"
-
+	"github.com/zoumo/logdog/pkg/pythonic"
 )
 
 const (
@@ -41,15 +40,15 @@ type Logger struct {
 	ConfigLoader
 }
 
-func (self *Logger) LoadConfig(c map[string]interface{}) error {
-	config, err := DictReflect(c)
+func (lg *Logger) LoadConfig(c map[string]interface{}) error {
+	config, err := pythonic.DictReflect(c)
 	if err != nil {
 		return nil
 	}
-	self.Name = config.MustGetString("name", "")
+	lg.Name = config.MustGetString("name", "")
 
-	self.Level = GetLevelByName(config.MustGetString("level", "NOTHING"))
-	self.runtimeCaller = config.MustGetBool("enable_runtime_caller", false)
+	lg.Level = GetLevelByName(config.MustGetString("level", "NOTHING"))
+	lg.runtimeCaller = config.MustGetBool("enable_runtime_caller", false)
 
 	_handlers := config.MustGetArray("handlers", make([]interface{}, 0))
 
@@ -58,36 +57,36 @@ func (self *Logger) LoadConfig(c map[string]interface{}) error {
 		if hdlr == nil {
 			panic(fmt.Errorf("can not find handler: %s", h))
 		}
-		self.AddHandler(hdlr)
+		lg.AddHandler(hdlr)
 	}
 
 	return nil
 
 }
 
-func (self *Logger) EnableRuntimeCaller(enable bool) {
-	self.runtimeCaller = enable
+func (lg *Logger) EnableRuntimeCaller(enable bool) {
+	lg.runtimeCaller = enable
 }
 
-func (self *Logger) SetFuncCallDepth(depth int) {
-	self.funcCallDepth = depth
+func (lg *Logger) SetFuncCallDepth(depth int) {
+	lg.funcCallDepth = depth
 }
 
-func (self *Logger) SetLevel(level int) {
-	self.Level = level
+func (lg *Logger) SetLevel(level int) {
+	lg.Level = level
 }
 
-func (self *Logger) AddHandler(handlers ...Handler) {
-	self.Handlers = append(self.Handlers, handlers...)
+func (lg *Logger) AddHandler(handlers ...Handler) {
+	lg.Handlers = append(lg.Handlers, handlers...)
 }
 
-func (self Logger) log(level int, msg string, args ...interface{}) {
+func (lg *Logger) log(level int, msg string, args ...interface{}) {
 	// 获取runtime的信息
 	file := "??"
 	line := 0
 	funcname := "??"
-	if self.runtimeCaller {
-		if _pc, _file, _line, ok := runtime.Caller(self.funcCallDepth); ok {
+	if lg.runtimeCaller {
+		if _pc, _file, _line, ok := runtime.Caller(lg.funcCallDepth); ok {
 			file, line = _file, _line
 			if f := runtime.FuncForPC(_pc); f != nil {
 				funcname = f.Name() // full func name
@@ -95,32 +94,32 @@ func (self Logger) log(level int, msg string, args ...interface{}) {
 		}
 	}
 
-	record := NewLogRecord(self.Name, level, file, funcname, line, msg, args...)
-	self.Handle(record)
+	record := NewLogRecord(lg.Name, level, file, funcname, line, msg, args...)
+	lg.Handle(record)
 }
 
-func (self Logger) Handle(record *LogRecord) {
-	filtered := self.Filter(record)
+func (lg *Logger) Handle(record *LogRecord) {
+	filtered := lg.Filter(record)
 	if !filtered {
-		self.CallHandlers(record)
+		lg.CallHandlers(record)
 	}
 }
 
-func (self Logger) Filter(record *LogRecord) bool {
-	if record.Level < self.Level {
+func (lg Logger) Filter(record *LogRecord) bool {
+	if record.Level < lg.Level {
 		return true
 	}
 	return false
 }
 
-func (self Logger) CallHandlers(record *LogRecord) {
-	for _, hdlr := range self.Handlers {
+func (lg *Logger) CallHandlers(record *LogRecord) {
+	for _, hdlr := range lg.Handlers {
 		hdlr.Handle(record)
 	}
 }
 
-func (self Logger) Close() error {
-	for _, hdlr := range self.Handlers {
+func (lg *Logger) Close() error {
+	for _, hdlr := range lg.Handlers {
 		err := hdlr.Close()
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Close handler failed, [%v]", err)
@@ -129,62 +128,62 @@ func (self Logger) Close() error {
 	return nil
 }
 
-func (self Logger) Logf(level int, msg string, args ...interface{}) {
-	self.log(level, msg, args...)
+func (lg Logger) Logf(level int, msg string, args ...interface{}) {
+	lg.log(level, msg, args...)
 }
 
-func (self Logger) Debugf(msg string, args ...interface{}) {
-	self.log(DEBUG, msg, args...)
+func (lg Logger) Debugf(msg string, args ...interface{}) {
+	lg.log(DEBUG, msg, args...)
 }
-func (self Logger) Infof(msg string, args ...interface{}) {
-	self.log(INFO, msg, args...)
+func (lg Logger) Infof(msg string, args ...interface{}) {
+	lg.log(INFO, msg, args...)
 }
-func (self Logger) Warningf(msg string, args ...interface{}) {
-	self.log(WARN, msg, args...)
+func (lg Logger) Warningf(msg string, args ...interface{}) {
+	lg.log(WARN, msg, args...)
 }
-func (self Logger) Warnf(msg string, args ...interface{}) {
-	self.log(WARN, msg, args...)
+func (lg Logger) Warnf(msg string, args ...interface{}) {
+	lg.log(WARN, msg, args...)
 }
-func (self Logger) Errorf(msg string, args ...interface{}) {
-	self.log(ERROR, msg, args...)
+func (lg Logger) Errorf(msg string, args ...interface{}) {
+	lg.log(ERROR, msg, args...)
 }
-func (self Logger) Noticef(msg string, args ...interface{}) {
-	self.log(NOTICE, msg, args...)
+func (lg Logger) Noticef(msg string, args ...interface{}) {
+	lg.log(NOTICE, msg, args...)
 }
-func (self Logger) Criticalf(msg string, args ...interface{}) {
-	self.log(CRITICAL, msg, args...)
+func (lg Logger) Criticalf(msg string, args ...interface{}) {
+	lg.log(CRITICAL, msg, args...)
 }
-func (self Logger) Panicf(msg string, args ...interface{}) {
-	self.log(CRITICAL, msg, args...)
+func (lg Logger) Panicf(msg string, args ...interface{}) {
+	lg.log(CRITICAL, msg, args...)
 	panic("CRITICAL")
 }
 
-func (self Logger) Log(level int, args ...interface{}) {
-	self.log(level, "", args...)
+func (lg Logger) Log(level int, args ...interface{}) {
+	lg.log(level, "", args...)
 }
 
-func (self Logger) Debug(args ...interface{}) {
-	self.log(DEBUG, "", args...)
+func (lg Logger) Debug(args ...interface{}) {
+	lg.log(DEBUG, "", args...)
 }
-func (self Logger) Info(args ...interface{}) {
-	self.log(INFO, "", args...)
+func (lg Logger) Info(args ...interface{}) {
+	lg.log(INFO, "", args...)
 }
-func (self Logger) Warning(args ...interface{}) {
-	self.log(WARN, "", args...)
+func (lg Logger) Warning(args ...interface{}) {
+	lg.log(WARN, "", args...)
 }
-func (self Logger) Warn(args ...interface{}) {
-	self.log(WARN, "", args...)
+func (lg Logger) Warn(args ...interface{}) {
+	lg.log(WARN, "", args...)
 }
-func (self Logger) Error(args ...interface{}) {
-	self.log(ERROR, "", args...)
+func (lg Logger) Error(args ...interface{}) {
+	lg.log(ERROR, "", args...)
 }
-func (self Logger) Notice(args ...interface{}) {
-	self.log(NOTICE, "", args...)
+func (lg Logger) Notice(args ...interface{}) {
+	lg.log(NOTICE, "", args...)
 }
-func (self Logger) Critical(args ...interface{}) {
-	self.log(CRITICAL, "", args...)
+func (lg Logger) Critical(args ...interface{}) {
+	lg.log(CRITICAL, "", args...)
 }
-func (self Logger) Panic(msg string, args ...interface{}) {
-	self.log(CRITICAL, "", args...)
+func (lg Logger) Panic(msg string, args ...interface{}) {
+	lg.log(CRITICAL, "", args...)
 	panic("CRITICAL")
 }

@@ -31,6 +31,7 @@ type LogConfig struct {
 	Loggers                map[string]map[string]interface{} `json:"loggers"`
 }
 
+// LoadJsonConfig loads json config
 // if DisableExistingLoggers is true, all existing loggers will be closed , then a new root logger is created
 func LoadJsonConfig(config []byte) error {
 	var logConfig LogConfig

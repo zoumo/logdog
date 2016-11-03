@@ -35,13 +35,13 @@ func NewRotatingFileHandler(name string, path stirng) {
 
 }
 
-func (self RotatingFileHandler) shouldRollover(size int) {
-	needed := (self.MaxSize > 0 && (self.CurSize+size) >= self.MaxSize) ||
-		(self.MaxLine > 0 && (self.CurLine+1) >= self.MaxLine)
+func (hdlr RotatingFileHandler) shouldRollover(size int) {
+	needed := (hdlr.MaxSize > 0 && (hdlr.CurSize+size) >= hdlr.MaxSize) ||
+		(hdlr.MaxLine > 0 && (hdlr.CurLine+1) >= hdlr.MaxLine)
 	return needed
 }
 
-func (self RotatingFileHandler) doRollover() {
+func (hdlr RotatingFileHandler) doRollover() {
 
 }
 
@@ -51,8 +51,8 @@ func (self RotatingFileHandler) doRollover() {
 // BenchmarkBuffioScan   500      6408963 ns/op     4208 B/op    2 allocs/op
 // BenchmarkBytesCount   500      4323397 ns/op     8200 B/op    1 allocs/op
 // BenchmarkBytes32k     500      3650818 ns/op     65545 B/op   1 allocs/op
-func (self RotatingFileHandler) countLine() (int, error) {
-	file, err := os.Open(self.Path)
+func (hdlr RotatingFileHandler) countLine() (int, error) {
+	file, err := os.Open(hdlr.Path)
 	if err != nil {
 		return 0, err
 	}

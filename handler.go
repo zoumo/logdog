@@ -20,7 +20,7 @@ import (
 	"os"
 	"sync"
 
-	. "github.com/zoumo/logdog/pkg/pythonic"
+	"github.com/zoumo/logdog/pkg/pythonic"
 )
 
 type Handler interface {
@@ -43,23 +43,23 @@ func NewNullHandler() *NullHandler {
 	return &NullHandler{}
 }
 
-func (self *NullHandler) LoadConfig(config map[string]interface{}) error {
+func (hdlr *NullHandler) LoadConfig(config map[string]interface{}) error {
 	return nil
 }
 
-func (self NullHandler) Handle(*LogRecord) {
+func (hdlr *NullHandler) Handle(*LogRecord) {
 	// do nothing
 }
 
-func (self NullHandler) Filter(*LogRecord) bool {
+func (hdlr NullHandler) Filter(*LogRecord) bool {
 	return true
 }
 
-func (self NullHandler) Emit(*LogRecord) {
+func (hdlr *NullHandler) Emit(*LogRecord) {
 	// do nothing
 }
 
-func (self *NullHandler) Close() error {
+func (hdlr *NullHandler) Close() error {
 	return nil
 }
 
@@ -85,51 +85,51 @@ func NewStreamHandler() *StreamHandler {
 	}
 }
 
-func (self *StreamHandler) LoadConfig(c map[string]interface{}) error {
-	config, err := DictReflect(c)
+func (hdlr *StreamHandler) LoadConfig(c map[string]interface{}) error {
+	config, err := pythonic.DictReflect(c)
 	if err != nil {
 		return err
 	}
 
-	self.Name = config.MustGetString("name", "")
+	hdlr.Name = config.MustGetString("name", "")
 
-	self.Level = GetLevelByName(config.MustGetString("level", "NOTHING"))
+	hdlr.Level = GetLevelByName(config.MustGetString("level", "NOTHING"))
 
 	_formatter := config.MustGetString("formatter", "terminal")
 	formatter := GetFormatter(_formatter)
 	if formatter == nil {
 		return fmt.Errorf("can not find formatter: %s", _formatter)
 	}
-	self.Formatter = formatter
+	hdlr.Formatter = formatter
 
 	return nil
 }
 
-func (self StreamHandler) Emit(record *LogRecord) {
-	msg, err := self.Formatter.Format(record)
+func (hdlr *StreamHandler) Emit(record *LogRecord) {
+	msg, err := hdlr.Formatter.Format(record)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Format record failed, [%v]\n", err)
 	}
-	fmt.Fprintln(self.Out, msg)
+	fmt.Fprintln(hdlr.Out, msg)
 }
 
-func (self StreamHandler) Filter(record *LogRecord) bool {
-	if record.Level < self.Level {
+func (hdlr StreamHandler) Filter(record *LogRecord) bool {
+	if record.Level < hdlr.Level {
 		return true
 	}
 	return false
 }
 
-func (self *StreamHandler) Handle(record *LogRecord) {
-	filtered := self.Filter(record)
+func (hdlr *StreamHandler) Handle(record *LogRecord) {
+	filtered := hdlr.Filter(record)
 	if !filtered {
-		self.mu.Lock()
-		defer self.mu.Unlock()
-		self.Emit(record)
+		hdlr.mu.Lock()
+		defer hdlr.mu.Unlock()
+		hdlr.Emit(record)
 	}
 }
 
-func (self *StreamHandler) Close() error {
+func (hdlr *StreamHandler) Close() error {
 	return nil
 }
 
@@ -156,13 +156,13 @@ func NewFileHandler() *FileHandler {
 	}
 }
 
-func (self *FileHandler) LoadConfig(c map[string]interface{}) error {
-	config, err := DictReflect(c)
+func (hdlr *FileHandler) LoadConfig(c map[string]interface{}) error {
+	config, err := pythonic.DictReflect(c)
 	if err != nil {
 		return nil
 	}
 	// get name
-	self.Name = config.MustGetString("name", "")
+	hdlr.Name = config.MustGetString("name", "")
 
 	// get path and file
 	path := config.MustGetString("filename", "")
@@ -173,11 +173,11 @@ func (self *FileHandler) LoadConfig(c map[string]interface{}) error {
 	if err != nil {
 		panic(fmt.Errorf("Can not open file %s", path))
 	}
-	self.Path = path
-	self.Out = file
+	hdlr.Path = path
+	hdlr.Out = file
 
 	// get level
-	self.Level = GetLevelByName(config.MustGetString("level", "NOTHING"))
+	hdlr.Level = GetLevelByName(config.MustGetString("level", "NOTHING"))
 
 	// get formatter
 	_formatter := config.MustGetString("formatter", "default")
@@ -185,42 +185,42 @@ func (self *FileHandler) LoadConfig(c map[string]interface{}) error {
 	if formatter == nil {
 		return fmt.Errorf("can not find formatter: %s", _formatter)
 	}
-	self.Formatter = formatter
+	hdlr.Formatter = formatter
 
 	return nil
 }
 
-func (self *FileHandler) Emit(record *LogRecord) {
-	msg, err := self.Formatter.Format(record)
+func (hdlr *FileHandler) Emit(record *LogRecord) {
+	msg, err := hdlr.Formatter.Format(record)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Format record failed, [%v]\n", err)
 	}
-	fmt.Fprintln(self.Out, msg)
+	fmt.Fprintln(hdlr.Out, msg)
 }
 
-func (self FileHandler) Filter(record *LogRecord) bool {
-	if record.Level < self.Level {
+func (hdlr FileHandler) Filter(record *LogRecord) bool {
+	if record.Level < hdlr.Level {
 		return true
 	}
 	return false
 }
 
-func (self *FileHandler) Handle(record *LogRecord) {
-	if self.Out == nil {
+func (hdlr *FileHandler) Handle(record *LogRecord) {
+	if hdlr.Out == nil {
 		panic("you should set output file before use this handler")
 	}
-	filtered := self.Filter(record)
+	filtered := hdlr.Filter(record)
 	if !filtered {
-		self.mu.Lock()
-		defer self.mu.Unlock()
-		self.Emit(record)
+		hdlr.mu.Lock()
+		defer hdlr.mu.Unlock()
+		hdlr.Emit(record)
 	}
 }
-func (self *FileHandler) Close() error {
-	if self.Out == nil {
+func (hdlr *FileHandler) Close() error {
+	if hdlr.Out == nil {
 		return nil
 	}
-	return self.Out.Close()
+	return hdlr.Out.Close()
 }
 
 func init() {

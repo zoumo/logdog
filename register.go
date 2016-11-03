@@ -33,20 +33,20 @@ func NewRegister() *Register {
 	}
 }
 
-func (self *Register) Register(name string, v interface{}) {
-	_, ok := self.data[name]
+func (r *Register) Register(name string, v interface{}) {
+	_, ok := r.data[name]
 	if ok {
 		panic("Repeated registration key: " + name)
 	}
-	self.mu.Lock()
-	defer self.mu.Unlock()
-	self.data[name] = v
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.data[name] = v
 
 }
 
-func (self Register) Get(name string) interface{} {
+func (r *Register) Get(name string) interface{} {
 	// need lock ?
-	return self.data[name]
+	return r.data[name]
 }
 
 type Constructor func() ConfigLoader
