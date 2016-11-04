@@ -17,10 +17,12 @@ import (
 	"bytes"
 	"io"
 	"os"
+
+	"github.com/zoumo/logdog"
 )
 
 type RotatingFileHandler struct {
-	FileHandler
+	logdog.FileHandler
 
 	MaxLine int
 	CurLine int

@@ -39,5 +39,5 @@ func TestTimedelta(t *testing.T) {
 	td2 = td
 	td = td.Abs()
 	td = td.Add(&td2)
-	AssertEqual(t, td.String(), "0")
+	AssertEqual(t, td.String(), "0s")
 }
