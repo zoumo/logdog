@@ -23,7 +23,7 @@ import (
 
 	"github.com/zoumo/logdog/pkg/pythonic"
 	"github.com/zoumo/logdog/pkg/when"
-	"golang.org/x/crypto/ssh/terminal"
+	"github.com/golang/crypto/ssh/terminal"
 )
 
 // The Formatter interface to convert a LogRecord to string
