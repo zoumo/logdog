@@ -144,7 +144,7 @@ The **Fmt** message format string uses `%(<dictionary key>)` styled string subst
 Programmers can configure logging in two ways:
 
 1. Creating loggers, handlers, and formatters explicitly using Golang code that calls the configuration methods listed above.
-2. Creating a json format config string and passing it to the LoadJsonConfig() function.
+2. Creating a json format config string and passing it to the LoadJSONConfig() function.
 
 ```go
 package main
@@ -205,7 +205,7 @@ func main() {
 
     }`)
 
-    logdog.LoadJsonConfig(config)
+    logdog.LoadJSONConfig(config)
     logger := logdog.GetLogger("app")
     
 	logger.Debug("this is debug")

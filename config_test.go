@@ -19,7 +19,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestLoadJsonConfig(t *testing.T) {
+func TestLoadJSONConfig(t *testing.T) {
 
 	// var log_config interface{}
 	config := []byte(`{
@@ -44,7 +44,7 @@ func TestLoadJsonConfig(t *testing.T) {
 
     }`)
 
-	err := LoadJsonConfig(config)
+	err := LoadJSONConfig(config)
 	assert.Nil(t, err)
 	// app := GetLogger("app")
 	// assert.Equal(t, app.Name, "app")

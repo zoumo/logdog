@@ -33,11 +33,11 @@ type RotatingFileHandler struct {
 	Daily bool
 }
 
-func NewRotatingFileHandler(name string, path stirng) {
+func NewRotatingFileHandler(name string, path string) {
 
 }
 
-func (hdlr RotatingFileHandler) shouldRollover(size int) {
+func (hdlr RotatingFileHandler) shouldRollover(size int) bool {
 	needed := (hdlr.MaxSize > 0 && (hdlr.CurSize+size) >= hdlr.MaxSize) ||
 		(hdlr.MaxLine > 0 && (hdlr.CurLine+1) >= hdlr.MaxLine)
 	return needed
