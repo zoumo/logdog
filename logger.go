@@ -23,7 +23,6 @@ import (
 
 const (
 	DefaultFuncCallDepth = 2
-	DEFAULT_FUNC         = 1
 )
 
 // Logger All log entries pass through the formatter before logged to Output. The
