@@ -18,12 +18,15 @@ import (
 	"fmt"
 )
 
+// ConfigLoader xx
 type ConfigLoader interface {
 	LoadConfig(map[string]interface{}) error
 }
 
+// Config is a alias for map[string]interface{}
 type Config map[string]interface{}
 
+// LogConfig defines the configuration of logger
 type LogConfig struct {
 	DisableExistingLoggers bool                              `json:"disable_existing_loggers"`
 	Formatters             map[string]map[string]interface{} `json:"formatters"`
@@ -31,8 +34,8 @@ type LogConfig struct {
 	Loggers                map[string]map[string]interface{} `json:"loggers"`
 }
 
-// LoadJSONConfig loads json config
-// if DisableExistingLoggers is true, all existing loggers will be closed , then a new root logger is created
+// LoadJSONConfig loads a json config
+// if DisableExistingLoggers is true, all existing loggers will be closed , then a new root logger will be created
 func LoadJSONConfig(config []byte) error {
 	var logConfig LogConfig
 

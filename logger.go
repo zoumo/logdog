@@ -22,19 +22,21 @@ import (
 )
 
 const (
-	DEFAULT_FUNC_CALL_DEPTH = 2
+	DefaultFuncCallDepth = 2
+	DEFAULT_FUNC         = 1
 )
 
-// All log entries pass through the formatter before logged to Out. The
+// Logger All log entries pass through the formatter before logged to Output. The
 // included formatters are `TextFormatter` and `JSONFormatter` for which
 // TextFormatter is the default. In development (when a TTY is attached) it
 // logs with colors, but to a file it wouldn't. You can easily implement your
 // own that implements the `Formatter` interface, see the `README` or included
 // formatters for examples.
 type Logger struct {
-	Name          string
-	Handlers      []Handler
-	Level         int
+	Name     string
+	Handlers []Handler
+	Level    int
+	// funcCallDepth is the number of stack frames to ascend
 	funcCallDepth int
 	runtimeCaller bool
 	ConfigLoader

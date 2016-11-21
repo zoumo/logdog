@@ -50,7 +50,7 @@ func TestLogger(t *testing.T) {
 
 func TestJsonLogger(t *testing.T) {
 	logger := GetLogger("json")
-	formatter := JsonFormatter{}
+	formatter := JSONFormatter{}
 	handler := NewStreamHandler()
 	handler.Formatter = formatter
 	logger.AddHandler(handler)

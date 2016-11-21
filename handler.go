@@ -23,10 +23,11 @@ import (
 	"github.com/zoumo/logdog/pkg/pythonic"
 )
 
+// Handler specifies how to write a LoadConfig, appropriately formatted, to output.
 type Handler interface {
 	// Handle the specified record, filter and emit
 	Handle(*LogRecord)
-	// Check if handler should filter the specified record
+	// Filter check if handler should filter the specified record
 	Filter(*LogRecord) bool
 	// Emit log record to output - e.g. stderr or file
 	Emit(*LogRecord)
@@ -34,38 +35,46 @@ type Handler interface {
 	Close() error
 }
 
+// NullHandler is an example handler doing nothing
 type NullHandler struct {
 	Name string
 	ConfigLoader
 }
 
+// NewNullHandler returns a NullHandler
 func NewNullHandler() *NullHandler {
 	return &NullHandler{}
 }
 
+// LoadConfig loads config from its input and
+// stores it in the value pointed to by c
 func (hdlr *NullHandler) LoadConfig(config map[string]interface{}) error {
 	return nil
 }
 
+//Handle the specified record, filter and emit it
 func (hdlr *NullHandler) Handle(*LogRecord) {
 	// do nothing
 }
 
+// Filter check if handler should filter the specified record
 func (hdlr NullHandler) Filter(*LogRecord) bool {
 	return true
 }
 
+// Emit log record to output - e.g. stderr or file
 func (hdlr *NullHandler) Emit(*LogRecord) {
 	// do nothing
 }
 
+// Close output stream, if not return error
 func (hdlr *NullHandler) Close() error {
 	return nil
 }
 
-// StreamHandler: A handler class which writes logging records,
+// StreamHandler is a handler which writes logging records,
 // appropriately formatted, to a stream.
-// Note that this class does not close the stream,
+// Note that this handler does not close the stream,
 // as os.Stdout or os.Stderr may be used.
 type StreamHandler struct {
 	Out       io.Writer
@@ -76,6 +85,7 @@ type StreamHandler struct {
 	ConfigLoader
 }
 
+// NewStreamHandler returns a new StreamHandler fully initialized
 func NewStreamHandler() *StreamHandler {
 	return &StreamHandler{
 		Name:      "",
@@ -85,6 +95,8 @@ func NewStreamHandler() *StreamHandler {
 	}
 }
 
+// LoadConfig loads config from its input and
+// stores it in the value pointed to by c
 func (hdlr *StreamHandler) LoadConfig(c map[string]interface{}) error {
 	config, err := pythonic.DictReflect(c)
 	if err != nil {
@@ -105,6 +117,7 @@ func (hdlr *StreamHandler) LoadConfig(c map[string]interface{}) error {
 	return nil
 }
 
+// Emit log record to output - e.g. stderr or file
 func (hdlr *StreamHandler) Emit(record *LogRecord) {
 	msg, err := hdlr.Formatter.Format(record)
 	if err != nil {
@@ -113,13 +126,15 @@ func (hdlr *StreamHandler) Emit(record *LogRecord) {
 	fmt.Fprintln(hdlr.Out, msg)
 }
 
-func (hdlr StreamHandler) Filter(record *LogRecord) bool {
+// Filter check if handler should filter the specified record
+func (hdlr *StreamHandler) Filter(record *LogRecord) bool {
 	if record.Level < hdlr.Level {
 		return true
 	}
 	return false
 }
 
+// Handle the specified record, filter and emit it
 func (hdlr *StreamHandler) Handle(record *LogRecord) {
 	filtered := hdlr.Filter(record)
 	if !filtered {
@@ -129,12 +144,13 @@ func (hdlr *StreamHandler) Handle(record *LogRecord) {
 	}
 }
 
+// Close output stream, if not return error
 func (hdlr *StreamHandler) Close() error {
 	return nil
 }
 
-// File handler
-// It is similar to SteamHandler
+// FileHandler is a handler similar to SteamHandler
+// its if specified file and it will close the file
 type FileHandler struct {
 	Path string
 	Out  *os.File
@@ -147,6 +163,7 @@ type FileHandler struct {
 	ConfigLoader
 }
 
+// NewFileHandler returns a new FileHandler fully initialized
 func NewFileHandler() *FileHandler {
 
 	return &FileHandler{
@@ -156,6 +173,8 @@ func NewFileHandler() *FileHandler {
 	}
 }
 
+// LoadConfig loads config from its input and
+// stores it in the value pointed to by c
 func (hdlr *FileHandler) LoadConfig(c map[string]interface{}) error {
 	config, err := pythonic.DictReflect(c)
 	if err != nil {
@@ -190,6 +209,7 @@ func (hdlr *FileHandler) LoadConfig(c map[string]interface{}) error {
 	return nil
 }
 
+// Emit log record to file
 func (hdlr *FileHandler) Emit(record *LogRecord) {
 	msg, err := hdlr.Formatter.Format(record)
 	if err != nil {
@@ -198,6 +218,7 @@ func (hdlr *FileHandler) Emit(record *LogRecord) {
 	fmt.Fprintln(hdlr.Out, msg)
 }
 
+// Filter check if handler should filter the specified record
 func (hdlr FileHandler) Filter(record *LogRecord) bool {
 	if record.Level < hdlr.Level {
 		return true
@@ -205,6 +226,7 @@ func (hdlr FileHandler) Filter(record *LogRecord) bool {
 	return false
 }
 
+// Handle the specified record, filter and emit it
 func (hdlr *FileHandler) Handle(record *LogRecord) {
 	if hdlr.Out == nil {
 		panic("you should set output file before use this handler")
@@ -216,6 +238,8 @@ func (hdlr *FileHandler) Handle(record *LogRecord) {
 		hdlr.Emit(record)
 	}
 }
+
+// Close file, if not return error
 func (hdlr *FileHandler) Close() error {
 	if hdlr.Out == nil {
 		return nil

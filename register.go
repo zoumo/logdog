@@ -103,7 +103,7 @@ func GetLogger(name string) *Logger {
 	// set name
 	logger.Name = name
 	// default func call depth is 2
-	logger.funcCallDepth = DEFAULT_FUNC_CALL_DEPTH
+	logger.funcCallDepth = DefaultFuncCallDepth
 	// enable analyze runtime caller
 	logger.runtimeCaller = true
 

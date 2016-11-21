@@ -26,20 +26,20 @@ import (
 	"github.com/zoumo/logdog/pkg/when"
 )
 
-// The Formatter interface to convert a LogRecord to string
+// Formatter is an interface which can convert a LogRecord to string
 type Formatter interface {
 	Format(*LogRecord) (string, error)
 }
 
-// FormatTime Return the creation time of the specified LogRecord as formatted text.
+// FormatTime returns the creation time of the specified LogRecord as formatted text.
 func FormatTime(record *LogRecord, datefmt string) string {
 	if datefmt == "" {
-		datefmt = DEFAULT_TIME_FORMAT
+		datefmt = DefaultDateFmt
 	}
 	return when.Strftime(&record.Time, datefmt)
 }
 
-// Default Formatter instances are used to convert a LogRecord to text.
+// TextFormatter is the default formatter used to convert a LogRecord to text.
 //
 // The Formatter can be initialized with a format string which makes use of
 // knowledge of the LogRecord attributes - e.g. the default value mentioned
@@ -62,7 +62,7 @@ func FormatTime(record *LogRecord, datefmt string) string {
 // %(message)         The result of record.getMessage(), computed just as
 //                    the record is emitted
 // %(color)           print color
-// %(end_color)       reset color
+// %(endColor)       reset color
 //
 type TextFormatter struct {
 	Fmt          string
@@ -72,40 +72,44 @@ type TextFormatter struct {
 }
 
 const (
-	DEFAULT_FORMAT      = "%(color)[%(time)] [%(levelname)] [%(filename):%(lineno)]%(end_color) %(message)"
-	DEFAULT_TIME_FORMAT = "%Y-%m-%d %H:%M:%S"
+	// DefaultFmt is the default log string format value for TextFormatter
+	DefaultFmt = "%(color)[%(time)] [%(levelname)] [%(filename):%(lineno)]%(endColor) %(message)"
+	// DefaultDateFmt is the default log time string format value for TextFormatter
+	DefaultDateFmt = "%Y-%m-%d %H:%M:%S"
 	// colors
-	blue       = 34
-	green      = 32
-	yellow     = 33
-	red        = 31
-	dark_green = 36
-	white      = 37
+	blue      = 34
+	green     = 32
+	yellow    = 33
+	red       = 31
+	darkGreen = 36
+	white     = 37
 )
 
 var (
+	// LogRecordFieldRegexp is the field regexp
+	// for example, I will replace %(name) of real record name
 	// TODO support %[(name)][flags][width].[precision]typecode
 	LogRecordFieldRegexp = regexp.MustCompile(`\%\(\w+\)`)
-	// default formatter is an text formatter without color
+	// DefaultFormatter is the default formatter of TextFormatter without color
 	DefaultFormatter = TextFormatter{
-		Fmt:     DEFAULT_FORMAT,
-		DateFmt: DEFAULT_TIME_FORMAT,
+		Fmt:     DefaultFmt,
+		DateFmt: DefaultDateFmt,
 	}
-	// terminal formatter is an text formatter with color
+	// TerminalFormatter is an TextFormatter with color
 	TerminalFormatter = TextFormatter{
-		Fmt:          DEFAULT_FORMAT,
-		DateFmt:      DEFAULT_TIME_FORMAT,
+		Fmt:          DefaultFmt,
+		DateFmt:      DefaultDateFmt,
 		EnableColors: true,
 	}
 
-	// This variable describes colors of different log level
+	// ColorHash describes colors of different log level
 	// you can add new color for your own log level
 	ColorHash = map[int]int{
 		DEBUG:    blue,
 		INFO:     green,
 		WARN:     yellow,
 		ERROR:    red,
-		NOTICE:   dark_green,
+		NOTICE:   darkGreen,
 		CRITICAL: red,
 	}
 
@@ -115,7 +119,7 @@ var (
 	isColorTerminal = isTerminal && (runtime.GOOS != "windows")
 )
 
-// Return color for deferent level, default is white
+// colorHash returns color for deferent level, default is white
 func colorHash(level int) string {
 	// http://blog.csdn.net/acmee/article/details/6613060
 	color, ok := ColorHash[level]
@@ -125,48 +129,51 @@ func colorHash(level int) string {
 	return fmt.Sprintf("\033[%dm", color)
 }
 
+// NewTextFormatter return a new TextFormatter with default config
 func NewTextFormatter() *TextFormatter {
 	return &TextFormatter{
-		Fmt:          DEFAULT_FORMAT,
-		DateFmt:      DEFAULT_TIME_FORMAT,
+		Fmt:          DefaultFmt,
+		DateFmt:      DefaultDateFmt,
 		EnableColors: false,
 	}
 }
 
+// LoadConfig loads config from its input and
+// stores it in the value pointed to by c
 func (tf *TextFormatter) LoadConfig(c map[string]interface{}) error {
 	config, err := pythonic.DictReflect(c)
 	if err != nil {
 		return err
 	}
 
-	tf.Fmt = config.MustGetString("fmt", DEFAULT_FORMAT)
-	tf.DateFmt = config.MustGetString("datefmt", DEFAULT_TIME_FORMAT)
+	tf.Fmt = config.MustGetString("fmt", DefaultFmt)
+	tf.DateFmt = config.MustGetString("datefmt", DefaultDateFmt)
 	tf.EnableColors = config.MustGetBool("enable_colors", false)
 
 	return nil
 
 }
 
-// Format the specified record as text.
+// Format convert the specified record to string.
 func (tf TextFormatter) Format(record *LogRecord) (string, error) {
 
-	fmt_str := tf.Fmt
-	if fmt_str == "" {
+	fmtStr := tf.Fmt
+	if fmtStr == "" {
 		// Don't open color by default
-		fmt_str = DEFAULT_FORMAT
+		fmtStr = DefaultFmt
 		tf.EnableColors = false
 	}
 	// 防止需要多次添加颜色, 减少函数调用
 	color := ""
-	end_color := ""
+	endColor := ""
 	if isColorTerminal && tf.EnableColors {
 		color = colorHash(record.Level)
-		end_color = "\033[0m" // reset color
+		endColor = "\033[0m" // reset color
 	}
-	fmt_str += tf.formatFields(record)
+	fmtStr += tf.formatFields(record)
 
 	// replace %(field) with actual record value
-	str := LogRecordFieldRegexp.ReplaceAllStringFunc(fmt_str, func(match string) string {
+	str := LogRecordFieldRegexp.ReplaceAllStringFunc(fmtStr, func(match string) string {
 		// match : %(field)
 		field := match[2 : len(match)-1]
 		switch field {
@@ -190,8 +197,8 @@ func (tf TextFormatter) Format(record *LogRecord) (string, error) {
 			return record.GetMessage()
 		case "color":
 			return color
-		case "end_color":
-			return end_color
+		case "endColor":
+			return endColor
 		}
 		return match
 	})
@@ -206,32 +213,36 @@ func (tf TextFormatter) formatFields(record *LogRecord) string {
 	for k, v := range record.Fields {
 		fmt.Fprintf(b, " %s=%+v", k, v)
 	}
-	b.WriteString("%(end_color)")
+	b.WriteString("%(endColor)")
 	return b.String()
 }
 
-// JsonFormatter
-type JsonFormatter struct {
+// JSONFormatter can convert LogRecord to json text
+type JSONFormatter struct {
 	Datefmt string
 }
 
-func NewJsonFormatter() *JsonFormatter {
-	return &JsonFormatter{
-		Datefmt: DEFAULT_TIME_FORMAT,
+// NewJSONFormatter returns a JSONFormatter with default config
+func NewJSONFormatter() *JSONFormatter {
+	return &JSONFormatter{
+		Datefmt: DefaultDateFmt,
 	}
 }
 
-func (jf *JsonFormatter) LoadConfig(c map[string]interface{}) error {
+// LoadConfig loads config from its input and
+// stores it in the value pointed to by c
+func (jf *JSONFormatter) LoadConfig(c map[string]interface{}) error {
 	config, err := pythonic.DictReflect(c)
 	if err != nil {
 		return err
 	}
 
-	jf.Datefmt = config.MustGetString("datefmt", DEFAULT_TIME_FORMAT)
+	jf.Datefmt = config.MustGetString("datefmt", DefaultDateFmt)
 	return nil
 }
 
-func (jf JsonFormatter) Format(record *LogRecord) (string, error) {
+// Format convert the specified record to json string.
+func (jf JSONFormatter) Format(record *LogRecord) (string, error) {
 	fields := make(Fields, len(record.Fields)+4)
 	for k, v := range record.Fields {
 		fields[k] = v
@@ -248,12 +259,12 @@ func (jf JsonFormatter) Format(record *LogRecord) (string, error) {
 		data["_fields"] = fields
 	}
 
-	json_bytes, err := json.Marshal(data)
+	jsonBytes, err := json.Marshal(data)
 	if err != nil {
 		return "", fmt.Errorf("Marashal fields to Json failed, [%v]", err)
 	}
 
-	return string(json_bytes), nil
+	return string(jsonBytes), nil
 }
 
 func init() {
@@ -261,7 +272,7 @@ func init() {
 		return NewTextFormatter()
 	})
 	RegisterConstructor("JsonFormatter", func() ConfigLoader {
-		return NewJsonFormatter()
+		return NewJSONFormatter()
 	})
 
 	RegisterFormatter("default", DefaultFormatter)

@@ -68,13 +68,13 @@ func TestTextFormatterLoadConfig(t *testing.T) {
 		"enable_colors": true,
 	})
 
-	assert.Equal(t, formatter.Fmt, DEFAULT_FORMAT)
-	assert.Equal(t, formatter.DateFmt, DEFAULT_TIME_FORMAT)
+	assert.Equal(t, formatter.Fmt, DefaultFmt)
+	assert.Equal(t, formatter.DateFmt, DefaultDateFmt)
 	assert.True(t, formatter.EnableColors)
 }
 
 func TestJsonFormatterLoadConfig(t *testing.T) {
-	formatter := NewJsonFormatter()
+	formatter := NewJSONFormatter()
 	formatter.LoadConfig(Config{
 		"datefmt": "test",
 	})
@@ -113,9 +113,9 @@ func BenchmarkLargeColoredTextFormatter(b *testing.B) {
 }
 
 func BenchmarkSmallJsonFormatter(b *testing.B) {
-	do(b, &JsonFormatter{}, smallFields)
+	do(b, &JSONFormatter{}, smallFields)
 }
 
 func BenchmarkLargeJsonFormatter(b *testing.B) {
-	do(b, &JsonFormatter{}, largeFields)
+	do(b, &JSONFormatter{}, largeFields)
 }

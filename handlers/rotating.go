@@ -65,7 +65,7 @@ func (hdlr RotatingFileHandler) countLine() (int, error) {
 	lineSep := []byte{'\n'}
 
 	for {
-		c, err := r.Read(buf)
+		c, err := file.Read(buf)
 		if err != nil && err != io.EOF {
 			return count, err
 		}
