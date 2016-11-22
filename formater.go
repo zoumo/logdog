@@ -154,7 +154,7 @@ func (tf *TextFormatter) LoadConfig(c map[string]interface{}) error {
 
 }
 
-// Format convert the specified record to string.
+// Format converts the specified record to string.
 func (tf TextFormatter) Format(record *LogRecord) (string, error) {
 
 	fmtStr := tf.Fmt
@@ -241,7 +241,7 @@ func (jf *JSONFormatter) LoadConfig(c map[string]interface{}) error {
 	return nil
 }
 
-// Format convert the specified record to json string.
+// Format converts the specified record to json string.
 func (jf JSONFormatter) Format(record *LogRecord) (string, error) {
 	fields := make(Fields, len(record.Fields)+4)
 	for k, v := range record.Fields {

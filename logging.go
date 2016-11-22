@@ -56,26 +56,25 @@ var (
 	root *Logger = GetLogger("root")
 )
 
-// Get level name by level
+// GetLevelName gets level's name
 func GetLevelName(level int) string {
-	v, ok := nameLevels[level]
-	if ok {
+	if v, ok := nameLevels[level]; ok {
 		return v
-	} else {
-		return fmt.Sprintf("level %d", level)
 	}
+	return fmt.Sprintf("level %d", level)
+
 }
 
+// GetLevelByName gets level value by level name
 func GetLevelByName(levelname string) int {
-	v, ok := levelNames[levelname]
-	if ok {
+	if v, ok := levelNames[levelname]; ok {
 		return v
-	} else {
-		panic("can not find level by name: " + levelname)
 	}
+
+	panic("can not find level by name: " + levelname)
 }
 
-// Add new level and level name
+// AddLevelName adds new level and level name pair
 func AddLevelName(level int, levelName string) {
 	mu.Lock()
 	defer mu.Unlock()
@@ -83,22 +82,22 @@ func AddLevelName(level int, levelName string) {
 	nameLevels[level] = levelName
 }
 
-// This function is an alias of root.AddHandler
+// AddHandler is an alias of root.AddHandler
 func AddHandler(handlers ...Handler) {
 	root.AddHandler(handlers...)
 }
 
-// This function is an alias of root.EnableRuntimeCaller
+// EnableRuntimeCaller is an alias of root.EnableRuntimeCaller
 func EnableRuntimeCaller(enable bool) {
 	root.EnableRuntimeCaller(enable)
 }
 
-// This function is an alias of root.SetLevel
+// SetLevel is an alias of root.SetLevel
 func SetLevel(level int) {
 	root.SetLevel(level)
 }
 
-// This function is an alias of root.Close
+// Close is an alias of root.Close
 func Close(formatter Formatter) error {
 	return root.Close()
 }

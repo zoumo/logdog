@@ -22,35 +22,42 @@ var (
 	loggers      = NewRegister()
 )
 
+// Register is a struct binds name and interface such as Constructor
 type Register struct {
 	data map[string]interface{}
 	mu   sync.RWMutex
 }
 
+// NewRegister returns a new register
 func NewRegister() *Register {
 	return &Register{
 		data: make(map[string]interface{}),
 	}
 }
 
+// Register binds name and interface
 func (r *Register) Register(name string, v interface{}) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
 	_, ok := r.data[name]
 	if ok {
 		panic("Repeated registration key: " + name)
 	}
-	r.mu.Lock()
-	defer r.mu.Unlock()
 	r.data[name] = v
 
 }
 
+// Get returns an interface registered with given name
 func (r *Register) Get(name string) interface{} {
 	// need lock ?
 	return r.data[name]
 }
 
+// Constructor is a function which returns an ConfigLoader
 type Constructor func() ConfigLoader
 
+// GetConstructor returns an Constructor registered with given name
+// if not, returns nil
 func GetConstructor(name string) Constructor {
 	v := constructors.Get(name)
 	if v == nil {
@@ -59,10 +66,17 @@ func GetConstructor(name string) Constructor {
 	return v.(Constructor)
 }
 
+// RegisterConstructor binds name and Constructor
 func RegisterConstructor(name string, c Constructor) {
 	constructors.Register(name, c)
 }
 
+// RegisterFormatter binds name and Formatter
+func RegisterFormatter(name string, formatter Formatter) {
+	formatters.Register(name, formatter)
+}
+
+// GetFormatter returns an Formatter registered with given name
 func GetFormatter(name string) Formatter {
 	v := formatters.Get(name)
 	if v == nil {
@@ -71,10 +85,12 @@ func GetFormatter(name string) Formatter {
 	return v.(Formatter)
 }
 
-func RegisterFormatter(name string, formatter Formatter) {
-	formatters.Register(name, formatter)
+// RegisterHandler binds name and Handler
+func RegisterHandler(name string, handler Handler) {
+	handlers.Register(name, handler)
 }
 
+// GetHandler returns a Handler registered with given name
 func GetHandler(name string) Handler {
 	v := handlers.Get(name)
 	if v == nil {
@@ -83,11 +99,8 @@ func GetHandler(name string) Handler {
 	return v.(Handler)
 }
 
-func RegisterHandler(name string, handler Handler) {
-	handlers.Register(name, handler)
-}
-
-// Get a logger by name, if not, create one
+// GetLogger returns an logger by name
+// if not, create one
 func GetLogger(name string) *Logger {
 	if name == "" {
 		name = "root"
@@ -118,6 +131,7 @@ func GetLogger(name string) *Logger {
 	return logger
 }
 
+// DisableExistingLoggers closes all existing loggers and unregister them
 func DisableExistingLoggers() {
 	// close all existing logger
 	loggers.mu.Lock()

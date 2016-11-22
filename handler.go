@@ -27,7 +27,7 @@ import (
 type Handler interface {
 	// Handle the specified record, filter and emit
 	Handle(*LogRecord)
-	// Filter check if handler should filter the specified record
+	// Filter checks if handler should filter the specified record
 	Filter(*LogRecord) bool
 	// Emit log record to output - e.g. stderr or file
 	Emit(*LogRecord)
@@ -57,7 +57,7 @@ func (hdlr *NullHandler) Handle(*LogRecord) {
 	// do nothing
 }
 
-// Filter check if handler should filter the specified record
+// Filter checks if handler should filter the specified record
 func (hdlr NullHandler) Filter(*LogRecord) bool {
 	return true
 }
@@ -126,7 +126,7 @@ func (hdlr *StreamHandler) Emit(record *LogRecord) {
 	fmt.Fprintln(hdlr.Out, msg)
 }
 
-// Filter check if handler should filter the specified record
+// Filter checks if handler should filter the specified record
 func (hdlr *StreamHandler) Filter(record *LogRecord) bool {
 	if record.Level < hdlr.Level {
 		return true
@@ -218,8 +218,8 @@ func (hdlr *FileHandler) Emit(record *LogRecord) {
 	fmt.Fprintln(hdlr.Out, msg)
 }
 
-// Filter check if handler should filter the specified record
-func (hdlr FileHandler) Filter(record *LogRecord) bool {
+// Filter checks if handler should filter the specified record
+func (hdlr *FileHandler) Filter(record *LogRecord) bool {
 	if record.Level < hdlr.Level {
 		return true
 	}

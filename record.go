@@ -20,12 +20,14 @@ import (
 	"time"
 )
 
+// Fields is an alias to man[string]interface{}
 type Fields map[string]interface{}
 
 func (f Fields) String() string {
 	return fmt.Sprintf("%#v", (map[string]interface{})(f))
 }
 
+// LogRecord defines a real log record should be
 type LogRecord struct {
 	Name          string
 	Level         int
@@ -43,6 +45,7 @@ type LogRecord struct {
 	Fields Fields
 }
 
+// NewLogRecord returns a new log record
 func NewLogRecord(name string, level int, pathname string, funcname string, line int, msg string, args ...interface{}) *LogRecord {
 	record := LogRecord{
 		Name:     name,
@@ -72,7 +75,7 @@ func NewLogRecord(name string, level int, pathname string, funcname string, line
 	return &record
 }
 
-// Format record message by msg and args
+// GetMessage formats record message by msg and args
 // if msg == "" {
 //     msg = fmt.Sprint(lr.Args...)
 // } else {
@@ -88,16 +91,16 @@ func (lr LogRecord) GetMessage() string {
 	return msg
 }
 
-// Extract fields (Fields) from args
+// ExtractFieldsFromArgs extracts fields (Fields) from args
 // Fields should be the last element in args
 func (lr *LogRecord) ExtractFieldsFromArgs() {
-	args_len := len(lr.Args)
-	if args_len == 0 {
+	argsLen := len(lr.Args)
+	if argsLen == 0 {
 		return
 	}
 
-	if fields, ok := lr.Args[args_len-1].(Fields); ok {
-		lr.Args = lr.Args[:args_len-1]
+	if fields, ok := lr.Args[argsLen-1].(Fields); ok {
+		lr.Args = lr.Args[:argsLen-1]
 		lr.Fields = fields
 	}
 
