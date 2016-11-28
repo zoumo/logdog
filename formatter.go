@@ -21,9 +21,9 @@ import (
 	"runtime"
 	"syscall"
 
-	"github.com/docker/docker/pkg/term"
 	"github.com/zoumo/logdog/pkg/pythonic"
 	"github.com/zoumo/logdog/pkg/when"
+	"golang.org/x/crypto/ssh/terminal"
 )
 
 // Formatter is an interface which can convert a LogRecord to string
@@ -115,7 +115,7 @@ var (
 
 	// check if stderr is terminal, sometimes it is redirected to a file
 	// isTerminal      = terminal.IsTerminal(syscall.Stderr)
-	isTerminal      = term.IsTerminal(uintptr(syscall.Stderr))
+	isTerminal      = terminal.IsTerminal(syscall.Stderr)
 	isColorTerminal = isTerminal && (runtime.GOOS != "windows")
 )
 

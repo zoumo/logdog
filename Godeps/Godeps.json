@@ -18,7 +18,11 @@
 		},
 		{
 			"ImportPath": "golang.org/x/crypto/ssh/terminal",
-			"Rev": "84e98f45760e87786b7f24603b8166a6fa09811d"
+			"Rev": "9477e0b78b9ac3d0b03822fd95422e2fe07627cd"
+		},
+		{
+			"ImportPath": "golang.org/x/sys/unix",
+			"Rev": "30237cf4eefd639b184d1f2cb77a581ea0be8947"
 		}
 	]
 }

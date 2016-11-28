@@ -214,7 +214,7 @@ func main() {
 ```
 
 # Requirement
-- [github.com/docker/docker/pkg/term](https://github.com/docker/docker/pkg/term)
+- [golang.org/x/crypto/ssh/terminal](https://github.com/golang/crypto/tree/master/ssh/terminal)
 - [github.com/stretchr/testify/assert](https://github.com/stretchr/testify/assert)
 
 # TODO
