@@ -43,6 +43,10 @@ type Logger struct {
 	runtimeCaller bool
 }
 
+type LoggerOption interface {
+	setLogger(*Logger)
+}
+
 // NewLogger returns a new Logger
 func NewLogger() *Logger {
 
@@ -167,43 +171,43 @@ func (lg Logger) Logf(level int, msg string, args ...interface{}) {
 
 // Debugf emits log with DEBUG level and format string
 func (lg Logger) Debugf(msg string, args ...interface{}) {
-	lg.log(DEBUG, msg, args...)
+	lg.log(DebugLevel, msg, args...)
 }
 
 // Infof emits log with INFO level and format string
 func (lg Logger) Infof(msg string, args ...interface{}) {
-	lg.log(INFO, msg, args...)
+	lg.log(InfoLevel, msg, args...)
 }
 
 // Warningf emits log with WARN level and format string
 func (lg Logger) Warningf(msg string, args ...interface{}) {
-	lg.log(WARN, msg, args...)
+	lg.log(WarnLevel, msg, args...)
 }
 
 // Warnf emits log with WARN level and format string
 func (lg Logger) Warnf(msg string, args ...interface{}) {
-	lg.log(WARN, msg, args...)
+	lg.log(WarnLevel, msg, args...)
 }
 
 // Errorf emits log with ERROR level and format string
 func (lg Logger) Errorf(msg string, args ...interface{}) {
-	lg.log(ERROR, msg, args...)
+	lg.log(ErrorLevel, msg, args...)
 }
 
 // Noticef emits log with NOTICE level and format string
 func (lg Logger) Noticef(msg string, args ...interface{}) {
-	lg.log(NOTICE, msg, args...)
+	lg.log(NoticeLevel, msg, args...)
 }
 
 // Criticalf emits log with CRITICAL level and format string
 func (lg Logger) Criticalf(msg string, args ...interface{}) {
-	lg.log(CRITICAL, msg, args...)
+	lg.log(CriticalLevel, msg, args...)
 }
 
 // Panicf emits log with CRITICAL level and format string
 // and panic it
 func (lg Logger) Panicf(msg string, args ...interface{}) {
-	lg.log(CRITICAL, msg, args...)
+	lg.log(CriticalLevel, msg, args...)
 	panic("CRITICAL")
 }
 
@@ -214,42 +218,42 @@ func (lg Logger) Log(level int, args ...interface{}) {
 
 // Debug emits log message with DEBUG level
 func (lg Logger) Debug(args ...interface{}) {
-	lg.log(DEBUG, "", args...)
+	lg.log(DebugLevel, "", args...)
 }
 
 //Info emits log message with INFO level
 func (lg Logger) Info(args ...interface{}) {
-	lg.log(INFO, "", args...)
+	lg.log(InfoLevel, "", args...)
 }
 
 // Warning emits log message with WARN level
 func (lg Logger) Warning(args ...interface{}) {
-	lg.log(WARN, "", args...)
+	lg.log(WarnLevel, "", args...)
 }
 
 // Warn emits log message with WARN level
 func (lg Logger) Warn(args ...interface{}) {
-	lg.log(WARN, "", args...)
+	lg.log(WarnLevel, "", args...)
 }
 
 // Error emits log message with ERROR level
 func (lg Logger) Error(args ...interface{}) {
-	lg.log(ERROR, "", args...)
+	lg.log(ErrorLevel, "", args...)
 }
 
 // Notice emits log message with NOTICE level
 func (lg Logger) Notice(args ...interface{}) {
-	lg.log(NOTICE, "", args...)
+	lg.log(NoticeLevel, "", args...)
 }
 
 // Critical emits log message with CRITICAL level
 func (lg Logger) Critical(args ...interface{}) {
-	lg.log(CRITICAL, "", args...)
+	lg.log(CriticalLevel, "", args...)
 }
 
 // Panic emits log message with CRITICAL level
 // and panic it
 func (lg Logger) Panic(msg string, args ...interface{}) {
-	lg.log(CRITICAL, "", args...)
+	lg.log(CriticalLevel, "", args...)
 	panic("CRITICAL")
 }

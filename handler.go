@@ -108,7 +108,7 @@ func NewStreamHandler() *StreamHandler {
 		Name:      "",
 		output:    os.Stderr,
 		Formatter: TerminalFormatter,
-		Level:     NOTHING,
+		Level:     NothingLevel,
 	}
 }
 
@@ -216,7 +216,7 @@ func NewFileHandler() *FileHandler {
 	return &FileHandler{
 		output:    Discard,
 		Name:      "",
-		Level:     NOTHING,
+		Level:     NothingLevel,
 		Formatter: DefaultFormatter,
 	}
 }

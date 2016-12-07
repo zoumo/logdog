@@ -107,12 +107,12 @@ var (
 	// ColorHash describes colors of different log level
 	// you can add new color for your own log level
 	ColorHash = map[int]int{
-		DEBUG:    blue,
-		INFO:     green,
-		WARN:     yellow,
-		ERROR:    red,
-		NOTICE:   darkGreen,
-		CRITICAL: red,
+		DebugLevel:    blue,
+		InfoLevel:     green,
+		WarnLevel:     yellow,
+		ErrorLevel:    red,
+		NoticeLevel:   darkGreen,
+		CriticalLevel: red,
 	}
 
 	// check if stderr is terminal, sometimes it is redirected to a file

@@ -30,7 +30,7 @@ var (
 	name     = "test"
 	pathname = "test/record"
 	fun      = "test/test.record"
-	level    = DEBUG
+	level    = DebugLevel
 	line     = 1
 )
 

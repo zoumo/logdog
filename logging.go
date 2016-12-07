@@ -19,45 +19,47 @@ import (
 )
 
 const (
-	// NOTHING log level
-	NOTHING = 0
-	// DEBUG log level
-	DEBUG = 1 //0x00000001
-	// INFO log level
-	INFO = 2 //0x00000010
-	// WARN log level
-	WARN = 4 //0x00000100
-	// WARNING is alias to WARN
-	WARNING = 4 //0x00000100
-	// ERROR log level
-	ERROR = 8 //0x00001000
-	// NOTICE log level
-	NOTICE = 16 //0x00010000
-	// CRITICAL log level
-	CRITICAL = 32 //0x00100000
+	// NothingLevel log level
+	NothingLevel = 0
+	// DebugLevel log level
+	DebugLevel = 1 //0x00000001
+	// InfoLevel log level
+	InfoLevel = 2 //0x00000010
+	// WarnLevel log level
+	WarnLevel = 4 //0x00000100
+	// WarningLevel is alias of WARN
+	WarningLevel = 4 //0x00000100
+	// ErrorLevel log level
+	ErrorLevel = 8 //0x00001000
+	// NoticeLevel log level
+	NoticeLevel = 16 //0x00010000
+	// FatalLevel log level
+	FatalLevel = 32 //0x00100000
+	// CriticalLevel log level
+	CriticalLevel = 32 //0x00100000
 	// ALL log levle
 	ALL = 255 //0x11111111
 )
 
 var (
 	levelNames = map[string]int{
-		"NOTHING":  NOTHING,
-		"DEBUG":    DEBUG,
-		"INFO":     INFO,
-		"WARN":     WARN,
-		"WARNING":  WARNING,
-		"ERROR":    ERROR,
-		"NOTICE":   NOTICE,
-		"CRITICAL": CRITICAL,
+		"NOTHING": NothingLevel,
+		"DEBUG":   DebugLevel,
+		"INFO":    InfoLevel,
+		"WARN":    WarnLevel,
+		"WARNING": WarningLevel,
+		"ERROR":   ErrorLevel,
+		"NOTICE":  NoticeLevel,
+		"FATAL":   FatalLevel,
 	}
 	nameLevels = map[int]string{
-		NOTHING:  "NOTHING",
-		DEBUG:    "DEBUG",
-		INFO:     "INFO",
-		WARN:     "WARN",
-		ERROR:    "ERROR",
-		NOTICE:   "NOTICE",
-		CRITICAL: "CRITICAL",
+		NothingLevel: "NOTHING",
+		DebugLevel:   "DEBUG",
+		InfoLevel:    "INFO",
+		WarnLevel:    "WARN",
+		ErrorLevel:   "ERROR",
+		NoticeLevel:  "NOTICE",
+		FatalLevel:   "FATAL",
 	}
 	mu = sync.Mutex{}
 
@@ -122,83 +124,83 @@ func Close(formatter Formatter) error {
 
 // Debugf is an alias of root.Debugf
 func Debugf(msg string, args ...interface{}) {
-	root.log(DEBUG, msg, args...)
+	root.log(DebugLevel, msg, args...)
 }
 
 // Infof is an alias of root.Infof
 func Infof(msg string, args ...interface{}) {
-	root.log(INFO, msg, args...)
+	root.log(InfoLevel, msg, args...)
 }
 
 // Warningf is an alias of root.Warningf
 func Warningf(msg string, args ...interface{}) {
-	root.log(WARN, msg, args...)
+	root.log(WarnLevel, msg, args...)
 }
 
 // Warnf is an alias of root.Warnf
 func Warnf(msg string, args ...interface{}) {
-	root.log(WARN, msg, args...)
+	root.log(WarnLevel, msg, args...)
 }
 
 // Errorf is an alias of root.Errorf
 func Errorf(msg string, args ...interface{}) {
-	root.log(ERROR, msg, args...)
+	root.log(ErrorLevel, msg, args...)
 }
 
 // Noticef is an alias of root.Noticef
 func Noticef(msg string, args ...interface{}) {
-	root.log(NOTICE, msg, args...)
+	root.log(NoticeLevel, msg, args...)
 }
 
 // Criticalf is an alias of root.Criticalf
 func Criticalf(msg string, args ...interface{}) {
-	root.log(CRITICAL, msg, args...)
+	root.log(CriticalLevel, msg, args...)
 }
 
 // Panicf is an alias of root.Panicf
 func Panicf(msg string, args ...interface{}) {
-	root.log(CRITICAL, msg, args...)
+	root.log(CriticalLevel, msg, args...)
 	panic("CRITICAL")
 }
 
 // Debug is an alias of root.Debug
 func Debug(args ...interface{}) {
-	root.log(DEBUG, "", args...)
+	root.log(DebugLevel, "", args...)
 }
 
 // Info is an alias of root.Info
 func Info(args ...interface{}) {
-	root.log(INFO, "", args...)
+	root.log(InfoLevel, "", args...)
 }
 
 // Warning is an alias of root.Warning
 func Warning(args ...interface{}) {
-	root.log(WARN, "", args...)
+	root.log(WarnLevel, "", args...)
 }
 
 // Warn is an alias of root.Warn
 func Warn(args ...interface{}) {
-	root.log(WARN, "", args...)
+	root.log(WarnLevel, "", args...)
 }
 
 // Error is an alias of root.Error
 func Error(args ...interface{}) {
-	root.log(ERROR, "", args...)
+	root.log(ErrorLevel, "", args...)
 }
 
 // Notice is an alias of root.Notice
 func Notice(args ...interface{}) {
-	root.log(NOTICE, "", args...)
+	root.log(NoticeLevel, "", args...)
 }
 
 // Critical is an alias of root.Critical
 func Critical(args ...interface{}) {
-	root.log(CRITICAL, "", args...)
+	root.log(CriticalLevel, "", args...)
 }
 
 // Panic an alias of root.Panic
 func Panic(msg string, args ...interface{}) {
-	root.log(CRITICAL, "", args...)
+	root.log(CriticalLevel, "", args...)
 	panic("CRITICAL")
 }
 

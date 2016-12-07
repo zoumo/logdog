@@ -22,19 +22,19 @@ import (
 func TestLogger(t *testing.T) {
 	logger := GetLogger("test")
 	logger.AddHandler(NewStreamHandler().discardOutput()).
-		SetLevel(INFO).
+		SetLevel(InfoLevel).
 		SetFuncCallDepth(3)
 
 	assert.Equal(t, "test", logger.Name)
 	assert.Len(t, logger.Handlers, 1)
-	assert.Equal(t, logger.Level, INFO)
+	assert.Equal(t, logger.Level, InfoLevel)
 	assert.Equal(t, 3, logger.funcCallDepth)
 
 	// echo
 	logger.SetFuncCallDepth(2).EnableRuntimeCaller(true)
 	logger.Debug("test debug") // filtered
 
-	logger.SetLevel(NOTHING)
+	logger.SetLevel(NothingLevel)
 
 	logger.Debug("who is your daddy", Fields{"who": "jim"})
 	logger.Info("logdog is useful", Fields{"agree": "yes"})
