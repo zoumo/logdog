@@ -46,12 +46,13 @@ func TestLoadJSONConfig(t *testing.T) {
 
 	err := LoadJSONConfig(config)
 	assert.Nil(t, err)
-	// app := GetLogger("app")
-	// assert.Equal(t, app.Name, "app")
-	// assert.Equal(t, app.Level, DEBUG)
-	// assert.Contains(t, app.Handlers, GetHandler("console"))
-	// assert.Contains(t, app.Handlers, GetHandler("null"))
-
-	// assert.Len(t, loggers, 2)
+	var h Handler
+	h = GetHandler("null")
+	assert.NotNil(t, h)
+	h = GetHandler("console")
+	assert.NotNil(t, h)
+	var l *Logger
+	l = GetLogger("app")
+	assert.NotNil(t, l)
 
 }

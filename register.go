@@ -100,7 +100,7 @@ func GetHandler(name string) Handler {
 }
 
 // GetLogger returns an logger by name
-// if not, create one
+// if not, create one and add it to logger register
 func GetLogger(name string) *Logger {
 	if name == "" {
 		name = "root"

@@ -30,12 +30,6 @@ func TestStreamHandler(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, handler.Level, INFO)
 	assert.Equal(t, handler.Formatter, TerminalFormatter)
-
-	// handler.Handle(record)
-	// handler.Handle(record2)
-	// handler.Emit(record)
-	// handler.Emit(record2)
-
 	assert.True(t, handler.Filter(record))
 	assert.False(t, handler.Filter(record2))
 	assert.Nil(t, handler.Close())
@@ -60,4 +54,11 @@ func TestFileHandler(t *testing.T) {
 	assert.True(t, handler.Filter(record))
 	assert.False(t, handler.Filter(record2))
 	assert.Nil(t, handler.Close())
+}
+
+func TestHandlerInterface(t *testing.T) {
+	assert.Implements(t, (*Handler)(nil), NewStreamHandler())
+	assert.Implements(t, (*ConfigLoader)(nil), NewStreamHandler())
+	assert.Implements(t, (*Handler)(nil), NewFileHandler())
+	assert.Implements(t, (*ConfigLoader)(nil), NewFileHandler())
 }

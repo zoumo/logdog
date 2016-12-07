@@ -14,7 +14,6 @@
 package logdog
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -22,6 +21,26 @@ import (
 
 	"github.com/zoumo/logdog/pkg/pythonic"
 )
+
+var (
+	// Discard is an io.ReadWriteCloser on which all Read | Write | Close calls succeed
+	// without doing anything.
+	Discard = devNull(0)
+)
+
+type devNull int
+
+func (devNull) Write(p []byte) (int, error) {
+	return len(p), nil
+}
+
+func (devNull) Read(p []byte) (n int, err error) {
+	return len(p), nil
+}
+
+func (devNull) Close() error {
+	return nil
+}
 
 // Handler specifies how to write a LoadConfig, appropriately formatted, to output.
 type Handler interface {
@@ -38,7 +57,6 @@ type Handler interface {
 // NullHandler is an example handler doing nothing
 type NullHandler struct {
 	Name string
-	ConfigLoader
 }
 
 // NewNullHandler returns a NullHandler
@@ -58,7 +76,7 @@ func (hdlr *NullHandler) Handle(*LogRecord) {
 }
 
 // Filter checks if handler should filter the specified record
-func (hdlr NullHandler) Filter(*LogRecord) bool {
+func (hdlr *NullHandler) Filter(*LogRecord) bool {
 	return true
 }
 
@@ -77,19 +95,18 @@ func (hdlr *NullHandler) Close() error {
 // Note that this handler does not close the stream,
 // as os.Stdout or os.Stderr may be used.
 type StreamHandler struct {
-	Out       io.Writer
-	Formatter Formatter
 	Name      string
 	Level     int
+	Formatter Formatter
+	output    io.Writer
 	mu        sync.Mutex
-	ConfigLoader
 }
 
 // NewStreamHandler returns a new StreamHandler fully initialized
 func NewStreamHandler() *StreamHandler {
 	return &StreamHandler{
 		Name:      "",
-		Out:       os.Stderr,
+		output:    os.Stderr,
 		Formatter: TerminalFormatter,
 		Level:     NOTHING,
 	}
@@ -117,13 +134,43 @@ func (hdlr *StreamHandler) LoadConfig(c map[string]interface{}) error {
 	return nil
 }
 
+// discardOutput replaces handler's Out with Discard, test only
+func (hdlr *StreamHandler) discardOutput() *StreamHandler {
+	hdlr.output = Discard
+	return hdlr
+}
+
+// SetOutput changes handler's output
+func (hdlr *StreamHandler) SetOutput(out io.Writer) *StreamHandler {
+	hdlr.output = out
+	return hdlr
+}
+
+// SetFormatter changes handler's Formatter
+func (hdlr *StreamHandler) SetFormatter(f Formatter) *StreamHandler {
+	hdlr.Formatter = f
+	return hdlr
+}
+
+// SetName changes handler's Formatter
+func (hdlr *StreamHandler) SetName(n string) *StreamHandler {
+	hdlr.Name = n
+	return hdlr
+}
+
+// SetLevel changes handler's Level
+func (hdlr *StreamHandler) SetLevel(i int) *StreamHandler {
+	hdlr.Level = i
+	return hdlr
+}
+
 // Emit log record to output - e.g. stderr or file
 func (hdlr *StreamHandler) Emit(record *LogRecord) {
 	msg, err := hdlr.Formatter.Format(record)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Format record failed, [%v]\n", err)
 	}
-	fmt.Fprintln(hdlr.Out, msg)
+	fmt.Fprintln(hdlr.output, msg)
 }
 
 // Filter checks if handler should filter the specified record
@@ -136,6 +183,9 @@ func (hdlr *StreamHandler) Filter(record *LogRecord) bool {
 
 // Handle the specified record, filter and emit it
 func (hdlr *StreamHandler) Handle(record *LogRecord) {
+	if hdlr.output == nil {
+		panic("you should set output file before use this handler")
+	}
 	filtered := hdlr.Filter(record)
 	if !filtered {
 		hdlr.mu.Lock()
@@ -150,23 +200,21 @@ func (hdlr *StreamHandler) Close() error {
 }
 
 // FileHandler is a handler similar to SteamHandler
-// its if specified file and it will close the file
+// if specified file and it will close the file
 type FileHandler struct {
-	Path string
-	Out  *os.File
-
-	Name  string
-	Level int
-
+	Name      string
+	Level     int
 	Formatter Formatter
+	output    io.WriteCloser
+	Path      string
 	mu        sync.Mutex
-	ConfigLoader
 }
 
 // NewFileHandler returns a new FileHandler fully initialized
 func NewFileHandler() *FileHandler {
 
 	return &FileHandler{
+		output:    Discard,
 		Name:      "",
 		Level:     NOTHING,
 		Formatter: DefaultFormatter,
@@ -178,22 +226,14 @@ func NewFileHandler() *FileHandler {
 func (hdlr *FileHandler) LoadConfig(c map[string]interface{}) error {
 	config, err := pythonic.DictReflect(c)
 	if err != nil {
-		return nil
+		return err
 	}
 	// get name
 	hdlr.Name = config.MustGetString("name", "")
 
 	// get path and file
 	path := config.MustGetString("filename", "")
-	if path == "" {
-		return errors.New("Should provide a valid file path")
-	}
-	file, err := os.OpenFile(path, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0660)
-	if err != nil {
-		panic(fmt.Errorf("Can not open file %s", path))
-	}
-	hdlr.Path = path
-	hdlr.Out = file
+	hdlr.SetPath(path)
 
 	// get level
 	hdlr.Level = GetLevelByName(config.MustGetString("level", "NOTHING"))
@@ -209,13 +249,51 @@ func (hdlr *FileHandler) LoadConfig(c map[string]interface{}) error {
 	return nil
 }
 
+// discardOutput replaces handler's Out with Discard, test only
+func (hdlr *FileHandler) discardOutput() *FileHandler {
+	hdlr.output = Discard
+	return hdlr
+}
+
+// SetPath opens file located in the path, if not, create it
+func (hdlr *FileHandler) SetPath(path string) *FileHandler {
+	if path == "" {
+		panic("Should provide a valid file path")
+	}
+	file, err := os.OpenFile(path, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0660)
+	if err != nil {
+		panic(fmt.Sprintf("Can not open file %s", path))
+	}
+	hdlr.Path = path
+	hdlr.output = file
+	return hdlr
+}
+
+// SetFormatter changes handler's Formatter
+func (hdlr *FileHandler) SetFormatter(f Formatter) *FileHandler {
+	hdlr.Formatter = f
+	return hdlr
+}
+
+// SetName changes handler's Formatter
+func (hdlr *FileHandler) SetName(n string) *FileHandler {
+	hdlr.Name = n
+	return hdlr
+}
+
+// SetLevel changes handler's Level
+func (hdlr *FileHandler) SetLevel(i int) *FileHandler {
+	hdlr.Level = i
+	return hdlr
+}
+
 // Emit log record to file
 func (hdlr *FileHandler) Emit(record *LogRecord) {
 	msg, err := hdlr.Formatter.Format(record)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Format record failed, [%v]\n", err)
 	}
-	fmt.Fprintln(hdlr.Out, msg)
+	fmt.Fprintln(hdlr.output, msg)
 }
 
 // Filter checks if handler should filter the specified record
@@ -228,9 +306,10 @@ func (hdlr *FileHandler) Filter(record *LogRecord) bool {
 
 // Handle the specified record, filter and emit it
 func (hdlr *FileHandler) Handle(record *LogRecord) {
-	if hdlr.Out == nil {
+	if hdlr.output == nil {
 		panic("you should set output file before use this handler")
 	}
+
 	filtered := hdlr.Filter(record)
 	if !filtered {
 		hdlr.mu.Lock()
@@ -241,10 +320,10 @@ func (hdlr *FileHandler) Handle(record *LogRecord) {
 
 // Close file, if not return error
 func (hdlr *FileHandler) Close() error {
-	if hdlr.Out == nil {
+	if hdlr.output == nil {
 		return nil
 	}
-	return hdlr.Out.Close()
+	return hdlr.output.Close()
 }
 
 func init() {

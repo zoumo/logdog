@@ -14,6 +14,7 @@
 package logdog
 
 import (
+	"bytes"
 	"fmt"
 	"path"
 	"strings"
@@ -23,8 +24,18 @@ import (
 // Fields is an alias to man[string]interface{}
 type Fields map[string]interface{}
 
+// String convert Fields to string
 func (f Fields) String() string {
 	return fmt.Sprintf("%#v", (map[string]interface{})(f))
+}
+
+// ToKVString convert Fields to string likes k1=v1 k2=v2
+func (f Fields) ToKVString() string {
+	b := &bytes.Buffer{}
+	for k, v := range f {
+		fmt.Fprintf(b, " %s=%+v", k, v)
+	}
+	return b.String()
 }
 
 // LogRecord defines a real log record should be
@@ -92,7 +103,7 @@ func (lr LogRecord) GetMessage() string {
 }
 
 // ExtractFieldsFromArgs extracts fields (Fields) from args
-// Fields should be the last element in args
+// Fields must be the last element in args
 func (lr *LogRecord) ExtractFieldsFromArgs() {
 	argsLen := len(lr.Args)
 	if argsLen == 0 {

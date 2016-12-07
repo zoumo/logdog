@@ -20,10 +20,16 @@ import (
 )
 
 var smallFields = Fields{
-	"a": "a",
-	"b": "b",
-	"c": "c",
-	"d": "d",
+	"a": "b",
+	"c": "d",
+	"e": "f",
+	"g": "h",
+	"i": "j",
+	"k": "l",
+	"m": "n",
+	"o": "p",
+	"q": "r",
+	"s": "t",
 }
 
 var largeFields = Fields{
@@ -68,8 +74,8 @@ func TestTextFormatterLoadConfig(t *testing.T) {
 		"enable_colors": true,
 	})
 
-	assert.Equal(t, formatter.Fmt, DefaultFmt)
-	assert.Equal(t, formatter.DateFmt, DefaultDateFmt)
+	assert.Equal(t, formatter.Fmt, DefaultFmtTemplate)
+	assert.Equal(t, formatter.DateFmt, DefaultDateFmtTemplate)
 	assert.True(t, formatter.EnableColors)
 }
 
@@ -79,6 +85,13 @@ func TestJsonFormatterLoadConfig(t *testing.T) {
 		"datefmt": "test",
 	})
 	assert.Equal(t, formatter.Datefmt, "test")
+}
+
+func TestFormatterInterface(t *testing.T) {
+	assert.Implements(t, (*Formatter)(nil), NewTextFormatter())
+	assert.Implements(t, (*ConfigLoader)(nil), NewTextFormatter())
+	assert.Implements(t, (*Formatter)(nil), NewJSONFormatter())
+	assert.Implements(t, (*ConfigLoader)(nil), NewJSONFormatter())
 }
 
 func do(b *testing.B, formatter Formatter, fields Fields) {

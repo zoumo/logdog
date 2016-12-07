@@ -92,18 +92,27 @@ func AddLevelName(level int, levelName string) {
 }
 
 // AddHandler is an alias of root.AddHandler
-func AddHandler(handlers ...Handler) {
+func AddHandler(handlers ...Handler) *Logger {
 	root.AddHandler(handlers...)
+	return root
 }
 
 // EnableRuntimeCaller is an alias of root.EnableRuntimeCaller
-func EnableRuntimeCaller(enable bool) {
+func EnableRuntimeCaller(enable bool) *Logger {
 	root.EnableRuntimeCaller(enable)
+	return root
 }
 
 // SetLevel is an alias of root.SetLevel
-func SetLevel(level int) {
+func SetLevel(level int) *Logger {
 	root.SetLevel(level)
+	return root
+}
+
+// SetFuncCallDepth is an alias of root.SetFuncCallDepth
+func SetFuncCallDepth(depth int) *Logger {
+	root.SetFuncCallDepth(depth)
+	return root
 }
 
 // Close is an alias of root.Close

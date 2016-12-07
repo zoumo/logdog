@@ -14,11 +14,11 @@
 package logdog
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"regexp"
 	"runtime"
+	"sync"
 	"syscall"
 
 	"github.com/zoumo/logdog/pkg/pythonic"
@@ -34,7 +34,7 @@ type Formatter interface {
 // FormatTime returns the creation time of the specified LogRecord as formatted text.
 func FormatTime(record *LogRecord, datefmt string) string {
 	if datefmt == "" {
-		datefmt = DefaultDateFmt
+		datefmt = DefaultDateFmtTemplate
 	}
 	return when.Strftime(&record.Time, datefmt)
 }
@@ -61,21 +61,23 @@ func FormatTime(record *LogRecord, datefmt string) string {
 // %(time)            Textual time when the LogRecord was created
 // %(message)         The result of record.getMessage(), computed just as
 //                    the record is emitted
-// %(color)           print color
-// %(endColor)       reset color
-//
+// %(color)           Print color
+// %(endColor)        Reset color
 type TextFormatter struct {
-	Fmt          string
-	DateFmt      string
-	EnableColors bool
+	fieldSequence []string
+	fmtTeplate    string
+	Fmt           string
+	DateFmt       string
+	EnableColors  bool
+	mu            sync.Mutex
 	ConfigLoader
 }
 
 const (
-	// DefaultFmt is the default log string format value for TextFormatter
-	DefaultFmt = "%(color)[%(time)] [%(levelname)] [%(filename):%(lineno)]%(endColor) %(message)"
-	// DefaultDateFmt is the default log time string format value for TextFormatter
-	DefaultDateFmt = "%Y-%m-%d %H:%M:%S"
+	// DefaultFmtTemplate is the default log string format value for TextFormatter
+	DefaultFmtTemplate = "%(color)[%(time)] [%(levelname)] [%(filename):%(lineno)]%(endColor) %(message)"
+	// DefaultDateFmtTemplate is the default log time string format value for TextFormatter
+	DefaultDateFmtTemplate = "%Y-%m-%d %H:%M:%S"
 	// colors
 	blue      = 34
 	green     = 32
@@ -91,14 +93,14 @@ var (
 	// TODO support %[(name)][flags][width].[precision]typecode
 	LogRecordFieldRegexp = regexp.MustCompile(`\%\(\w+\)`)
 	// DefaultFormatter is the default formatter of TextFormatter without color
-	DefaultFormatter = TextFormatter{
-		Fmt:     DefaultFmt,
-		DateFmt: DefaultDateFmt,
+	DefaultFormatter = &TextFormatter{
+		Fmt:     DefaultFmtTemplate,
+		DateFmt: DefaultDateFmtTemplate,
 	}
 	// TerminalFormatter is an TextFormatter with color
-	TerminalFormatter = TextFormatter{
-		Fmt:          DefaultFmt,
-		DateFmt:      DefaultDateFmt,
+	TerminalFormatter = &TextFormatter{
+		Fmt:          DefaultFmtTemplate,
+		DateFmt:      DefaultDateFmtTemplate,
 		EnableColors: true,
 	}
 
@@ -119,21 +121,26 @@ var (
 	isColorTerminal = isTerminal && (runtime.GOOS != "windows")
 )
 
+//IsColorTerminal return isTerminal and isColorTerminal
+func IsColorTerminal() (bool, bool) {
+	return isTerminal, isColorTerminal
+}
+
 // colorHash returns color for deferent level, default is white
-func colorHash(level int) string {
+func colorHash(level int) (string, string) {
 	// http://blog.csdn.net/acmee/article/details/6613060
 	color, ok := ColorHash[level]
 	if !ok {
 		color = white // white
 	}
-	return fmt.Sprintf("\033[%dm", color)
+	return fmt.Sprintf("\033[%dm", color), "\033[0m"
 }
 
 // NewTextFormatter return a new TextFormatter with default config
 func NewTextFormatter() *TextFormatter {
 	return &TextFormatter{
-		Fmt:          DefaultFmt,
-		DateFmt:      DefaultDateFmt,
+		Fmt:          DefaultFmtTemplate,
+		DateFmt:      DefaultDateFmtTemplate,
 		EnableColors: false,
 	}
 }
@@ -146,86 +153,108 @@ func (tf *TextFormatter) LoadConfig(c map[string]interface{}) error {
 		return err
 	}
 
-	tf.Fmt = config.MustGetString("fmt", DefaultFmt)
-	tf.DateFmt = config.MustGetString("datefmt", DefaultDateFmt)
+	tf.Fmt = config.MustGetString("fmt", DefaultFmtTemplate)
+	tf.DateFmt = config.MustGetString("datefmt", DefaultDateFmtTemplate)
 	tf.EnableColors = config.MustGetBool("enable_colors", false)
 
 	return nil
 
 }
 
-// Format converts the specified record to string.
-func (tf TextFormatter) Format(record *LogRecord) (string, error) {
-
-	fmtStr := tf.Fmt
-	if fmtStr == "" {
-		// Don't open color by default
-		fmtStr = DefaultFmt
-		tf.EnableColors = false
+// parse shoule run only once
+func (tf *TextFormatter) parse() {
+	if tf.fmtTeplate != "" && len(tf.fieldSequence) > 0 {
+		return
 	}
-	// 防止需要多次添加颜色, 减少函数调用
-	color := ""
-	endColor := ""
-	if isColorTerminal && tf.EnableColors {
-		color = colorHash(record.Level)
-		endColor = "\033[0m" // reset color
-	}
-	fmtStr += tf.formatFields(record)
 
-	// replace %(field) with actual record value
-	str := LogRecordFieldRegexp.ReplaceAllStringFunc(fmtStr, func(match string) string {
+	tf.mu.Lock()
+	defer tf.mu.Unlock()
+	if tf.Fmt == "" {
+		tf.Fmt = DefaultFmtTemplate
+	}
+
+	// append fields to Fmt no matter what it is
+	tf.Fmt += "%(color)%(fields)%(endColor)"
+
+	// replace %(field) with %s && add field name to sequence
+	// e.g. covert %(name) %(message) to %s %s
+	tf.fmtTeplate = LogRecordFieldRegexp.ReplaceAllStringFunc(tf.Fmt, func(match string) string {
 		// match : %(field)
 		field := match[2 : len(match)-1]
-		switch field {
-		case "name":
-			return record.Name
-		case "time":
-			return FormatTime(record, tf.DateFmt)
-		case "levelno":
-			return fmt.Sprintf("%d", record.Level)
-		case "levelname":
-			return record.LevelName
-		case "pathname":
-			return record.PathName
-		case "filename":
-			return record.FileName
-		case "funcname":
-			return record.ShortFuncName
-		case "lineno":
-			return fmt.Sprintf("%d", record.Line)
-		case "message":
-			return record.GetMessage()
-		case "color":
-			return color
-		case "endColor":
-			return endColor
-		}
-		return match
+		tf.fieldSequence = append(tf.fieldSequence, field)
+		return "%s"
 	})
 
-	return str, nil
 }
 
-func (tf TextFormatter) formatFields(record *LogRecord) string {
-
-	b := &bytes.Buffer{}
-	b.WriteString("%(color)")
-	for k, v := range record.Fields {
-		fmt.Fprintf(b, " %s=%+v", k, v)
+func (tf *TextFormatter) getColor(record *LogRecord) (string, string) {
+	color, endColor := "", ""
+	if isColorTerminal && tf.EnableColors {
+		color, endColor = colorHash(record.Level)
 	}
-	b.WriteString("%(endColor)")
-	return b.String()
+	return color, endColor
+}
+
+// Format converts the specified record to string.
+// bench mark with 10 fields
+// go template            33153 ns/op
+// ReplaceAllStringFunc    8420 ns/op
+// field sequence          5046 ns/op
+func (tf *TextFormatter) Format(record *LogRecord) (string, error) {
+
+	if tf.Fmt == "" {
+		// Don't open color printing by default
+		tf.EnableColors = false
+		tf.Fmt = DefaultFmtTemplate
+	}
+
+	tf.parse()
+
+	color, endColor := tf.getColor(record)
+
+	sequnce := make([]interface{}, 0, 20)
+
+	for _, field := range tf.fieldSequence {
+		switch field {
+		case "name":
+			sequnce = append(sequnce, record.Name)
+		case "time":
+			sequnce = append(sequnce, FormatTime(record, tf.DateFmt))
+		case "levelno":
+			sequnce = append(sequnce, fmt.Sprintf("%d", record.Level))
+		case "levelname":
+			sequnce = append(sequnce, record.LevelName)
+		case "pathname":
+			sequnce = append(sequnce, record.PathName)
+		case "filename":
+			sequnce = append(sequnce, record.FileName)
+		case "funcname":
+			sequnce = append(sequnce, record.ShortFuncName)
+		case "lineno":
+			sequnce = append(sequnce, fmt.Sprintf("%d", record.Line))
+		case "message":
+			sequnce = append(sequnce, record.GetMessage())
+		case "color":
+			sequnce = append(sequnce, color)
+		case "endColor":
+			sequnce = append(sequnce, endColor)
+		case "fields":
+			sequnce = append(sequnce, record.Fields.ToKVString())
+		}
+	}
+	return fmt.Sprintf(tf.fmtTeplate, sequnce...), nil
 }
 
 // JSONFormatter can convert LogRecord to json text
 type JSONFormatter struct {
 	Datefmt string
+	ConfigLoader
 }
 
 // NewJSONFormatter returns a JSONFormatter with default config
 func NewJSONFormatter() *JSONFormatter {
 	return &JSONFormatter{
-		Datefmt: DefaultDateFmt,
+		Datefmt: DefaultDateFmtTemplate,
 	}
 }
 
@@ -237,12 +266,12 @@ func (jf *JSONFormatter) LoadConfig(c map[string]interface{}) error {
 		return err
 	}
 
-	jf.Datefmt = config.MustGetString("datefmt", DefaultDateFmt)
+	jf.Datefmt = config.MustGetString("datefmt", DefaultDateFmtTemplate)
 	return nil
 }
 
 // Format converts the specified record to json string.
-func (jf JSONFormatter) Format(record *LogRecord) (string, error) {
+func (jf *JSONFormatter) Format(record *LogRecord) (string, error) {
 	fields := make(Fields, len(record.Fields)+4)
 	for k, v := range record.Fields {
 		fields[k] = v

@@ -41,7 +41,18 @@ type Logger struct {
 	// you should change it if you implement your own log function
 	funcCallDepth int
 	runtimeCaller bool
-	ConfigLoader
+}
+
+// NewLogger returns a new Logger
+func NewLogger() *Logger {
+
+	logger := new(Logger)
+	// default func call depth is 2
+	logger.funcCallDepth = DefaultFuncCallDepth
+	// enable analyze runtime caller
+	logger.runtimeCaller = true
+
+	return logger
 }
 
 // LoadConfig loads config from its input and
@@ -72,24 +83,28 @@ func (lg *Logger) LoadConfig(c map[string]interface{}) error {
 
 // EnableRuntimeCaller enables logger to get caller so that logger
 // can get caller's filename and lineno
-func (lg *Logger) EnableRuntimeCaller(enable bool) {
+func (lg *Logger) EnableRuntimeCaller(enable bool) *Logger {
 	lg.runtimeCaller = enable
+	return lg
 }
 
 // SetFuncCallDepth changes the number of stack frames to ascend
 // you should change it if you implement your own log api function, e.g. Notify
-func (lg *Logger) SetFuncCallDepth(depth int) {
+func (lg *Logger) SetFuncCallDepth(depth int) *Logger {
 	lg.funcCallDepth = depth
+	return lg
 }
 
 // SetLevel defines the filter level
-func (lg *Logger) SetLevel(level int) {
+func (lg *Logger) SetLevel(level int) *Logger {
 	lg.Level = level
+	return lg
 }
 
 // AddHandler adds handler to logger
-func (lg *Logger) AddHandler(handlers ...Handler) {
+func (lg *Logger) AddHandler(handlers ...Handler) *Logger {
 	lg.Handlers = append(lg.Handlers, handlers...)
+	return lg
 }
 
 // log is the true logging function
