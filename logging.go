@@ -11,87 +11,16 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 package logdog
 
-import (
-	"fmt"
-	"sync"
-)
-
-const (
-	// NothingLevel log level
-	NothingLevel = 0
-	// DebugLevel log level
-	DebugLevel = 1 //0x00000001
-	// InfoLevel log level
-	InfoLevel = 2 //0x00000010
-	// WarnLevel log level
-	WarnLevel = 4 //0x00000100
-	// WarningLevel is alias of WARN
-	WarningLevel = 4 //0x00000100
-	// ErrorLevel log level
-	ErrorLevel = 8 //0x00001000
-	// NoticeLevel log level
-	NoticeLevel = 16 //0x00010000
-	// FatalLevel log level
-	FatalLevel = 32 //0x00100000
-	// CriticalLevel log level
-	CriticalLevel = 32 //0x00100000
-	// ALL log levle
-	ALL = 255 //0x11111111
-)
+import "sync"
 
 var (
-	levelNames = map[string]int{
-		"NOTHING": NothingLevel,
-		"DEBUG":   DebugLevel,
-		"INFO":    InfoLevel,
-		"WARN":    WarnLevel,
-		"WARNING": WarningLevel,
-		"ERROR":   ErrorLevel,
-		"NOTICE":  NoticeLevel,
-		"FATAL":   FatalLevel,
-	}
-	nameLevels = map[int]string{
-		NothingLevel: "NOTHING",
-		DebugLevel:   "DEBUG",
-		InfoLevel:    "INFO",
-		WarnLevel:    "WARN",
-		ErrorLevel:   "ERROR",
-		NoticeLevel:  "NOTICE",
-		FatalLevel:   "FATAL",
-	}
 	mu = sync.Mutex{}
-
 	// set default logger
 	root = GetLogger("root")
 )
-
-// GetLevelName gets level's name
-func GetLevelName(level int) string {
-	if v, ok := nameLevels[level]; ok {
-		return v
-	}
-	return fmt.Sprintf("level %d", level)
-
-}
-
-// GetLevelByName gets level value by level name
-func GetLevelByName(levelname string) int {
-	if v, ok := levelNames[levelname]; ok {
-		return v
-	}
-
-	panic("can not find level by name: " + levelname)
-}
-
-// AddLevelName adds new level and level name pair
-func AddLevelName(level int, levelName string) {
-	mu.Lock()
-	defer mu.Unlock()
-	levelNames[levelName] = level
-	nameLevels[level] = levelName
-}
 
 // AddHandler is an alias of root.AddHandler
 func AddHandler(handlers ...Handler) *Logger {
@@ -106,7 +35,7 @@ func EnableRuntimeCaller(enable bool) *Logger {
 }
 
 // SetLevel is an alias of root.SetLevel
-func SetLevel(level int) *Logger {
+func SetLevel(level Level) *Logger {
 	root.SetLevel(level)
 	return root
 }
@@ -152,14 +81,14 @@ func Noticef(msg string, args ...interface{}) {
 	root.log(NoticeLevel, msg, args...)
 }
 
-// Criticalf is an alias of root.Criticalf
-func Criticalf(msg string, args ...interface{}) {
-	root.log(CriticalLevel, msg, args...)
+// Fatalf is an alias of root.Criticalf
+func Fatalf(msg string, args ...interface{}) {
+	root.log(FatalLevel, msg, args...)
 }
 
 // Panicf is an alias of root.Panicf
 func Panicf(msg string, args ...interface{}) {
-	root.log(CriticalLevel, msg, args...)
+	root.log(FatalLevel, msg, args...)
 	panic("CRITICAL")
 }
 
@@ -193,14 +122,14 @@ func Notice(args ...interface{}) {
 	root.log(NoticeLevel, "", args...)
 }
 
-// Critical is an alias of root.Critical
-func Critical(args ...interface{}) {
-	root.log(CriticalLevel, "", args...)
+// Fatal is an alias of root.Critical
+func Fatal(args ...interface{}) {
+	root.log(FatalLevel, "", args...)
 }
 
 // Panic an alias of root.Panic
 func Panic(msg string, args ...interface{}) {
-	root.log(CriticalLevel, "", args...)
+	root.log(FatalLevel, "", args...)
 	panic("CRITICAL")
 }
 

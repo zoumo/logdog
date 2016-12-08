@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 package logdog
 
 import (
@@ -36,7 +37,7 @@ const (
 type Logger struct {
 	Name     string
 	Handlers []Handler
-	Level    int
+	Level    Level
 	// funcCallDepth is the number of stack frames to ascend
 	// you should change it if you implement your own log function
 	funcCallDepth int
@@ -68,7 +69,7 @@ func (lg *Logger) LoadConfig(c map[string]interface{}) error {
 	}
 	lg.Name = config.MustGetString("name", "")
 
-	lg.Level = GetLevelByName(config.MustGetString("level", "NOTHING"))
+	lg.Level = GetLevel(config.MustGetString("level", "NOTHING"))
 	lg.runtimeCaller = config.MustGetBool("enable_runtime_caller", false)
 
 	_handlers := config.MustGetArray("handlers", make([]interface{}, 0))
@@ -100,7 +101,7 @@ func (lg *Logger) SetFuncCallDepth(depth int) *Logger {
 }
 
 // SetLevel defines the filter level
-func (lg *Logger) SetLevel(level int) *Logger {
+func (lg *Logger) SetLevel(level Level) *Logger {
 	lg.Level = level
 	return lg
 }
@@ -112,7 +113,7 @@ func (lg *Logger) AddHandler(handlers ...Handler) *Logger {
 }
 
 // log is the true logging function
-func (lg *Logger) log(level int, msg string, args ...interface{}) {
+func (lg *Logger) log(level Level, msg string, args ...interface{}) {
 	// 获取runtime的信息
 	file := "??"
 	line := 0
@@ -165,7 +166,7 @@ func (lg *Logger) Close() error {
 }
 
 // Logf emits log with specified level and format string
-func (lg Logger) Logf(level int, msg string, args ...interface{}) {
+func (lg Logger) Logf(level Level, msg string, args ...interface{}) {
 	lg.log(level, msg, args...)
 }
 
@@ -212,7 +213,7 @@ func (lg Logger) Panicf(msg string, args ...interface{}) {
 }
 
 // Log emits log message
-func (lg Logger) Log(level int, args ...interface{}) {
+func (lg Logger) Log(level Level, args ...interface{}) {
 	lg.log(level, "", args...)
 }
 

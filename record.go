@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 package logdog
 
 import (
@@ -41,7 +42,7 @@ func (f Fields) ToKVString() string {
 // LogRecord defines a real log record should be
 type LogRecord struct {
 	Name          string
-	Level         int
+	Level         Level
 	LevelName     string
 	PathName      string
 	FileName      string
@@ -57,7 +58,7 @@ type LogRecord struct {
 }
 
 // NewLogRecord returns a new log record
-func NewLogRecord(name string, level int, pathname string, funcname string, line int, msg string, args ...interface{}) *LogRecord {
+func NewLogRecord(name string, level Level, pathname string, funcname string, line int, msg string, args ...interface{}) *LogRecord {
 	record := LogRecord{
 		Name:     name,
 		Level:    level,
@@ -68,7 +69,7 @@ func NewLogRecord(name string, level int, pathname string, funcname string, line
 		Time:     time.Now(),
 	}
 	// level name
-	record.LevelName = GetLevelName(level)
+	record.LevelName = level.String()
 
 	// file name
 	_, filename := path.Split(pathname)

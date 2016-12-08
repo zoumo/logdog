@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 package logdog
 
 import (
@@ -106,13 +107,13 @@ var (
 
 	// ColorHash describes colors of different log level
 	// you can add new color for your own log level
-	ColorHash = map[int]int{
-		DebugLevel:    blue,
-		InfoLevel:     green,
-		WarnLevel:     yellow,
-		ErrorLevel:    red,
-		NoticeLevel:   darkGreen,
-		CriticalLevel: red,
+	ColorHash = map[Level]int{
+		DebugLevel:  blue,
+		InfoLevel:   green,
+		WarnLevel:   yellow,
+		ErrorLevel:  red,
+		NoticeLevel: darkGreen,
+		FatalLevel:  red,
 	}
 
 	// check if stderr is terminal, sometimes it is redirected to a file
@@ -127,7 +128,7 @@ func IsColorTerminal() (bool, bool) {
 }
 
 // colorHash returns color for deferent level, default is white
-func colorHash(level int) (string, string) {
+func colorHash(level Level) (string, string) {
 	// http://blog.csdn.net/acmee/article/details/6613060
 	color, ok := ColorHash[level]
 	if !ok {

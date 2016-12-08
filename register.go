@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 package logdog
 
 import "sync"
@@ -20,6 +21,7 @@ var (
 	handlers     = NewRegister()
 	constructors = NewRegister()
 	loggers      = NewRegister()
+	levels       = NewRegister()
 )
 
 // Register is a struct binds name and interface such as Constructor
@@ -36,6 +38,7 @@ func NewRegister() *Register {
 }
 
 // Register binds name and interface
+// It will panic if name already exists
 func (r *Register) Register(name string, v interface{}) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -47,7 +50,7 @@ func (r *Register) Register(name string, v interface{}) {
 
 }
 
-// Get returns an interface registered with given name
+// Get returns an interface registered with the given name
 func (r *Register) Get(name string) interface{} {
 	// need lock ?
 	return r.data[name]
@@ -56,7 +59,7 @@ func (r *Register) Get(name string) interface{} {
 // Constructor is a function which returns an ConfigLoader
 type Constructor func() ConfigLoader
 
-// GetConstructor returns an Constructor registered with given name
+// GetConstructor returns an Constructor registered with the given name
 // if not, returns nil
 func GetConstructor(name string) Constructor {
 	v := constructors.Get(name)
@@ -76,7 +79,7 @@ func RegisterFormatter(name string, formatter Formatter) {
 	formatters.Register(name, formatter)
 }
 
-// GetFormatter returns an Formatter registered with given name
+// GetFormatter returns an Formatter registered with the given name
 func GetFormatter(name string) Formatter {
 	v := formatters.Get(name)
 	if v == nil {
@@ -90,7 +93,7 @@ func RegisterHandler(name string, handler Handler) {
 	handlers.Register(name, handler)
 }
 
-// GetHandler returns a Handler registered with given name
+// GetHandler returns a Handler registered with the given name
 func GetHandler(name string) Handler {
 	v := handlers.Get(name)
 	if v == nil {
@@ -129,6 +132,22 @@ func GetLogger(name string) *Logger {
 
 	loggers.Register(name, logger)
 	return logger
+}
+
+// GetLevel returns a Level registered with the given name
+func GetLevel(name string) Level {
+	v := levels.Get(name)
+	if v == nil {
+		return Level(-1)
+	}
+	return v.(Level)
+}
+
+// RegisterLevel binds name and level
+func RegisterLevel(name string, level Level) {
+	levels.Register(name, level)
+	// add custom levels name
+	levelNames[level] = name
 }
 
 // DisableExistingLoggers closes all existing loggers and unregister them

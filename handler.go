@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 package logdog
 
 import (
@@ -96,7 +97,7 @@ func (hdlr *NullHandler) Close() error {
 // as os.Stdout or os.Stderr may be used.
 type StreamHandler struct {
 	Name      string
-	Level     int
+	Level     Level
 	Formatter Formatter
 	output    io.Writer
 	mu        sync.Mutex
@@ -122,7 +123,7 @@ func (hdlr *StreamHandler) LoadConfig(c map[string]interface{}) error {
 
 	hdlr.Name = config.MustGetString("name", "")
 
-	hdlr.Level = GetLevelByName(config.MustGetString("level", "NOTHING"))
+	hdlr.Level = GetLevel(config.MustGetString("level", "NOTHING"))
 
 	_formatter := config.MustGetString("formatter", "terminal")
 	formatter := GetFormatter(_formatter)
@@ -159,7 +160,7 @@ func (hdlr *StreamHandler) SetName(n string) *StreamHandler {
 }
 
 // SetLevel changes handler's Level
-func (hdlr *StreamHandler) SetLevel(i int) *StreamHandler {
+func (hdlr *StreamHandler) SetLevel(i Level) *StreamHandler {
 	hdlr.Level = i
 	return hdlr
 }
@@ -203,7 +204,7 @@ func (hdlr *StreamHandler) Close() error {
 // if specified file and it will close the file
 type FileHandler struct {
 	Name      string
-	Level     int
+	Level     Level
 	Formatter Formatter
 	output    io.WriteCloser
 	Path      string
@@ -236,7 +237,7 @@ func (hdlr *FileHandler) LoadConfig(c map[string]interface{}) error {
 	hdlr.SetPath(path)
 
 	// get level
-	hdlr.Level = GetLevelByName(config.MustGetString("level", "NOTHING"))
+	hdlr.Level = GetLevel(config.MustGetString("level", "NOTHING"))
 
 	// get formatter
 	_formatter := config.MustGetString("formatter", "default")
@@ -282,7 +283,7 @@ func (hdlr *FileHandler) SetName(n string) *FileHandler {
 }
 
 // SetLevel changes handler's Level
-func (hdlr *FileHandler) SetLevel(i int) *FileHandler {
+func (hdlr *FileHandler) SetLevel(i Level) *FileHandler {
 	hdlr.Level = i
 	return hdlr
 }
