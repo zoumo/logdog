@@ -45,8 +45,6 @@ func (devNull) Close() error {
 
 // Handler specifies how to write a LoadConfig, appropriately formatted, to output.
 type Handler interface {
-	// Handle the specified record, filter and emit
-	Handle(*LogRecord)
 	// Filter checks if handler should filter the specified record
 	Filter(*LogRecord) bool
 	// Emit log record to output - e.g. stderr or file
@@ -69,11 +67,6 @@ func NewNullHandler() *NullHandler {
 // stores it in the value pointed to by c
 func (hdlr *NullHandler) LoadConfig(config map[string]interface{}) error {
 	return nil
-}
-
-//Handle the specified record, filter and emit it
-func (hdlr *NullHandler) Handle(*LogRecord) {
-	// do nothing
 }
 
 // Filter checks if handler should filter the specified record
@@ -99,18 +92,30 @@ type StreamHandler struct {
 	Name      string
 	Level     Level
 	Formatter Formatter
-	output    io.Writer
+	Output    io.Writer
 	mu        sync.Mutex
 }
 
 // NewStreamHandler returns a new StreamHandler fully initialized
-func NewStreamHandler() *StreamHandler {
-	return &StreamHandler{
+func NewStreamHandler(options ...Option) *StreamHandler {
+	hdlr := &StreamHandler{
 		Name:      "",
-		output:    os.Stderr,
+		Output:    os.Stderr,
 		Formatter: TerminalFormatter,
 		Level:     NothingLevel,
 	}
+
+	hdlr.ApplyOptions(options...)
+
+	return hdlr
+}
+
+// ApplyOptions applys all option to StreamHandler
+func (hdlr *StreamHandler) ApplyOptions(options ...Option) *StreamHandler {
+	for _, opt := range options {
+		opt.applyOption(hdlr)
+	}
+	return hdlr
 }
 
 // LoadConfig loads config from its input and
@@ -135,43 +140,25 @@ func (hdlr *StreamHandler) LoadConfig(c map[string]interface{}) error {
 	return nil
 }
 
-// discardOutput replaces handler's Out with Discard, test only
-func (hdlr *StreamHandler) discardOutput() *StreamHandler {
-	hdlr.output = Discard
-	return hdlr
-}
-
-// SetOutput changes handler's output
-func (hdlr *StreamHandler) SetOutput(out io.Writer) *StreamHandler {
-	hdlr.output = out
-	return hdlr
-}
-
-// SetFormatter changes handler's Formatter
-func (hdlr *StreamHandler) SetFormatter(f Formatter) *StreamHandler {
-	hdlr.Formatter = f
-	return hdlr
-}
-
-// SetName changes handler's Formatter
-func (hdlr *StreamHandler) SetName(n string) *StreamHandler {
-	hdlr.Name = n
-	return hdlr
-}
-
-// SetLevel changes handler's Level
-func (hdlr *StreamHandler) SetLevel(i Level) *StreamHandler {
-	hdlr.Level = i
-	return hdlr
-}
-
 // Emit log record to output - e.g. stderr or file
 func (hdlr *StreamHandler) Emit(record *LogRecord) {
+	if hdlr.Output == nil || hdlr.Formatter == nil {
+		panic("you should set output and fomatter before use this handler")
+	}
+
+	if hdlr.Filter(record) {
+		return
+	}
+
+	hdlr.mu.Lock()
+	defer hdlr.mu.Unlock()
+
 	msg, err := hdlr.Formatter.Format(record)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Format record failed, [%v]\n", err)
+		return
 	}
-	fmt.Fprintln(hdlr.output, msg)
+	fmt.Fprintln(hdlr.Output, msg)
 }
 
 // Filter checks if handler should filter the specified record
@@ -180,19 +167,6 @@ func (hdlr *StreamHandler) Filter(record *LogRecord) bool {
 		return true
 	}
 	return false
-}
-
-// Handle the specified record, filter and emit it
-func (hdlr *StreamHandler) Handle(record *LogRecord) {
-	if hdlr.output == nil {
-		panic("you should set output file before use this handler")
-	}
-	filtered := hdlr.Filter(record)
-	if !filtered {
-		hdlr.mu.Lock()
-		defer hdlr.mu.Unlock()
-		hdlr.Emit(record)
-	}
 }
 
 // Close output stream, if not return error
@@ -206,20 +180,31 @@ type FileHandler struct {
 	Name      string
 	Level     Level
 	Formatter Formatter
-	output    io.WriteCloser
+	Output    io.WriteCloser
 	Path      string
 	mu        sync.Mutex
 }
 
 // NewFileHandler returns a new FileHandler fully initialized
-func NewFileHandler() *FileHandler {
-
-	return &FileHandler{
-		output:    Discard,
+func NewFileHandler(options ...Option) *FileHandler {
+	fh := &FileHandler{
+		Output:    Discard,
 		Name:      "",
 		Level:     NothingLevel,
 		Formatter: DefaultFormatter,
 	}
+
+	fh.ApplyOptions(options...)
+
+	return fh
+}
+
+// ApplyOptions applys all option to StreamHandler
+func (hdlr *FileHandler) ApplyOptions(options ...Option) *FileHandler {
+	for _, opt := range options {
+		opt.applyOption(hdlr)
+	}
+	return hdlr
 }
 
 // LoadConfig loads config from its input and
@@ -229,6 +214,7 @@ func (hdlr *FileHandler) LoadConfig(c map[string]interface{}) error {
 	if err != nil {
 		return err
 	}
+
 	// get name
 	hdlr.Name = config.MustGetString("name", "")
 
@@ -250,51 +236,43 @@ func (hdlr *FileHandler) LoadConfig(c map[string]interface{}) error {
 	return nil
 }
 
-// discardOutput replaces handler's Out with Discard, test only
-func (hdlr *FileHandler) discardOutput() *FileHandler {
-	hdlr.output = Discard
-	return hdlr
-}
-
 // SetPath opens file located in the path, if not, create it
 func (hdlr *FileHandler) SetPath(path string) *FileHandler {
 	if path == "" {
 		panic("Should provide a valid file path")
 	}
+
 	file, err := os.OpenFile(path, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0660)
 	if err != nil {
 		panic(fmt.Sprintf("Can not open file %s", path))
 	}
+
 	hdlr.Path = path
-	hdlr.output = file
-	return hdlr
-}
+	hdlr.Output = file
 
-// SetFormatter changes handler's Formatter
-func (hdlr *FileHandler) SetFormatter(f Formatter) *FileHandler {
-	hdlr.Formatter = f
-	return hdlr
-}
-
-// SetName changes handler's Formatter
-func (hdlr *FileHandler) SetName(n string) *FileHandler {
-	hdlr.Name = n
-	return hdlr
-}
-
-// SetLevel changes handler's Level
-func (hdlr *FileHandler) SetLevel(i Level) *FileHandler {
-	hdlr.Level = i
 	return hdlr
 }
 
 // Emit log record to file
 func (hdlr *FileHandler) Emit(record *LogRecord) {
+	if hdlr.Output == nil || hdlr.Formatter == nil {
+		panic("you should set output and fomatter before use this handler")
+	}
+
+	if hdlr.Filter(record) {
+		return
+	}
+
+	hdlr.mu.Lock()
+	defer hdlr.mu.Unlock()
+
 	msg, err := hdlr.Formatter.Format(record)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Format record failed, [%v]\n", err)
+		return
 	}
-	fmt.Fprintln(hdlr.output, msg)
+
+	fmt.Fprintln(hdlr.Output, msg)
 }
 
 // Filter checks if handler should filter the specified record
@@ -305,26 +283,12 @@ func (hdlr *FileHandler) Filter(record *LogRecord) bool {
 	return false
 }
 
-// Handle the specified record, filter and emit it
-func (hdlr *FileHandler) Handle(record *LogRecord) {
-	if hdlr.output == nil {
-		panic("you should set output file before use this handler")
-	}
-
-	filtered := hdlr.Filter(record)
-	if !filtered {
-		hdlr.mu.Lock()
-		defer hdlr.mu.Unlock()
-		hdlr.Emit(record)
-	}
-}
-
 // Close file, if not return error
 func (hdlr *FileHandler) Close() error {
-	if hdlr.output == nil {
+	if hdlr.Output == nil {
 		return nil
 	}
-	return hdlr.output.Close()
+	return hdlr.Output.Close()
 }
 
 func init() {

@@ -24,7 +24,7 @@ func TestLoadJSONConfig(t *testing.T) {
 
 	// var log_config interface{}
 	config := []byte(`{
-        "disable_existing_loggers": true,
+        "disableExistingLoggers": true,
         "handlers": {
             "null": {
                 "class": "NullHandler",

@@ -33,8 +33,6 @@ const (
 	NoticeLevel Level = 16 //0x00010000
 	// FatalLevel log level
 	FatalLevel Level = 32 //0x00100000
-	// CriticalLevel log level
-	CriticalLevel Level = 32 //0x00100000
 	// AllLevel log level only used in filter
 	AllLevel Level = 255 //0x11111111
 )
@@ -45,7 +43,6 @@ var (
 )
 
 // Level is a logging priority.
-//
 // Note that Level satisfies the Option interface
 type Level int
 

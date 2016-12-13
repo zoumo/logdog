@@ -23,9 +23,9 @@ import (
 )
 
 const (
-	// DefaultFuncCallDepth is 2 because you should ascend 2 frames
+	// DefaultCallerStackDepth is 2 because you should ascend 2 frames
 	// to get true caller function by default
-	DefaultFuncCallDepth = 2
+	DefaultCallerStackDepth = 2
 )
 
 // Logger entries pass through the formatter before logged to Output. The
@@ -38,26 +38,31 @@ type Logger struct {
 	Name     string
 	Handlers []Handler
 	Level    Level
-	// funcCallDepth is the number of stack frames to ascend
+	// callerStackDepth is the number of stack frames to ascend
 	// you should change it if you implement your own log function
-	funcCallDepth int
-	runtimeCaller bool
-}
-
-type LoggerOption interface {
-	setLogger(*Logger)
+	CallerStackDepth    int
+	EnableRuntimeCaller bool
 }
 
 // NewLogger returns a new Logger
-func NewLogger() *Logger {
+func NewLogger(options ...Option) *Logger {
 
-	logger := new(Logger)
-	// default func call depth is 2
-	logger.funcCallDepth = DefaultFuncCallDepth
-	// enable analyze runtime caller
-	logger.runtimeCaller = true
+	logger := &Logger{
+		CallerStackDepth:    DefaultCallerStackDepth,
+		EnableRuntimeCaller: true,
+	}
+
+	logger.ApplyOptions(options...)
 
 	return logger
+}
+
+// ApplyOptions applys all option to Logger
+func (lg *Logger) ApplyOptions(options ...Option) *Logger {
+	for _, opt := range options {
+		opt.applyOption(lg)
+	}
+	return lg
 }
 
 // LoadConfig loads config from its input and
@@ -67,10 +72,10 @@ func (lg *Logger) LoadConfig(c map[string]interface{}) error {
 	if err != nil {
 		return nil
 	}
-	lg.Name = config.MustGetString("name", "")
 
+	lg.Name = config.MustGetString("name", "")
 	lg.Level = GetLevel(config.MustGetString("level", "NOTHING"))
-	lg.runtimeCaller = config.MustGetBool("enable_runtime_caller", false)
+	lg.EnableRuntimeCaller = config.MustGetBool("enableRuntimeCaller", false)
 
 	_handlers := config.MustGetArray("handlers", make([]interface{}, 0))
 
@@ -79,35 +84,15 @@ func (lg *Logger) LoadConfig(c map[string]interface{}) error {
 		if hdlr == nil {
 			panic(fmt.Errorf("can not find handler: %s", h))
 		}
-		lg.AddHandler(hdlr)
+		lg.AddHandlers(hdlr)
 	}
 
 	return nil
 
 }
 
-// EnableRuntimeCaller enables logger to get caller so that logger
-// can get caller's filename and lineno
-func (lg *Logger) EnableRuntimeCaller(enable bool) *Logger {
-	lg.runtimeCaller = enable
-	return lg
-}
-
-// SetFuncCallDepth changes the number of stack frames to ascend
-// you should change it if you implement your own log api function, e.g. Notify
-func (lg *Logger) SetFuncCallDepth(depth int) *Logger {
-	lg.funcCallDepth = depth
-	return lg
-}
-
-// SetLevel defines the filter level
-func (lg *Logger) SetLevel(level Level) *Logger {
-	lg.Level = level
-	return lg
-}
-
-// AddHandler adds handler to logger
-func (lg *Logger) AddHandler(handlers ...Handler) *Logger {
+// AddHandlers adds handler to logger
+func (lg *Logger) AddHandlers(handlers ...Handler) *Logger {
 	lg.Handlers = append(lg.Handlers, handlers...)
 	return lg
 }
@@ -118,8 +103,8 @@ func (lg *Logger) log(level Level, msg string, args ...interface{}) {
 	file := "??"
 	line := 0
 	funcname := "??"
-	if lg.runtimeCaller {
-		if _pc, _file, _line, ok := runtime.Caller(lg.funcCallDepth); ok {
+	if lg.EnableRuntimeCaller {
+		if _pc, _file, _line, ok := runtime.Caller(lg.CallerStackDepth); ok {
 			file, line = _file, _line
 			if f := runtime.FuncForPC(_pc); f != nil {
 				funcname = f.Name() // full func name
@@ -135,7 +120,7 @@ func (lg *Logger) log(level Level, msg string, args ...interface{}) {
 func (lg *Logger) Handle(record *LogRecord) {
 	filtered := lg.Filter(record)
 	if !filtered {
-		lg.CallHandlers(record)
+		lg.callHandlers(record)
 	}
 }
 
@@ -148,9 +133,9 @@ func (lg Logger) Filter(record *LogRecord) bool {
 }
 
 // CallHandlers call all handler registered in logger
-func (lg *Logger) CallHandlers(record *LogRecord) {
+func (lg *Logger) callHandlers(record *LogRecord) {
 	for _, hdlr := range lg.Handlers {
-		hdlr.Handle(record)
+		hdlr.Emit(record)
 	}
 }
 
@@ -180,11 +165,6 @@ func (lg Logger) Infof(msg string, args ...interface{}) {
 	lg.log(InfoLevel, msg, args...)
 }
 
-// Warningf emits log with WARN level and format string
-func (lg Logger) Warningf(msg string, args ...interface{}) {
-	lg.log(WarnLevel, msg, args...)
-}
-
 // Warnf emits log with WARN level and format string
 func (lg Logger) Warnf(msg string, args ...interface{}) {
 	lg.log(WarnLevel, msg, args...)
@@ -200,16 +180,16 @@ func (lg Logger) Noticef(msg string, args ...interface{}) {
 	lg.log(NoticeLevel, msg, args...)
 }
 
-// Criticalf emits log with CRITICAL level and format string
-func (lg Logger) Criticalf(msg string, args ...interface{}) {
-	lg.log(CriticalLevel, msg, args...)
+// Fatalf emits log with FATAL level and format string
+func (lg Logger) Fatalf(msg string, args ...interface{}) {
+	lg.log(FatalLevel, msg, args...)
 }
 
-// Panicf emits log with CRITICAL level and format string
+// Panicf emits log with FATAL level and format string
 // and panic it
 func (lg Logger) Panicf(msg string, args ...interface{}) {
-	lg.log(CriticalLevel, msg, args...)
-	panic("CRITICAL")
+	lg.log(FatalLevel, msg, args...)
+	panic(FatalLevel.String())
 }
 
 // Log emits log message
@@ -227,11 +207,6 @@ func (lg Logger) Info(args ...interface{}) {
 	lg.log(InfoLevel, "", args...)
 }
 
-// Warning emits log message with WARN level
-func (lg Logger) Warning(args ...interface{}) {
-	lg.log(WarnLevel, "", args...)
-}
-
 // Warn emits log message with WARN level
 func (lg Logger) Warn(args ...interface{}) {
 	lg.log(WarnLevel, "", args...)
@@ -247,14 +222,14 @@ func (lg Logger) Notice(args ...interface{}) {
 	lg.log(NoticeLevel, "", args...)
 }
 
-// Critical emits log message with CRITICAL level
-func (lg Logger) Critical(args ...interface{}) {
-	lg.log(CriticalLevel, "", args...)
+// Fatal emits log message with FATAL level
+func (lg Logger) Fatal(args ...interface{}) {
+	lg.log(FatalLevel, "", args...)
 }
 
-// Panic emits log message with CRITICAL level
+// Panic emits log message with FATAL level
 // and panic it
 func (lg Logger) Panic(msg string, args ...interface{}) {
-	lg.log(CriticalLevel, "", args...)
-	panic("CRITICAL")
+	lg.log(FatalLevel, "", args...)
+	panic(FatalLevel.String())
 }

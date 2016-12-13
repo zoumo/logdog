@@ -29,7 +29,7 @@ type Config map[string]interface{}
 
 // LogConfig defines the configuration of logger
 type LogConfig struct {
-	DisableExistingLoggers bool                              `json:"disable_existing_loggers"`
+	DisableExistingLoggers bool                              `json:"disableExistingLoggers"`
 	Formatters             map[string]map[string]interface{} `json:"formatters"`
 	Handlers               map[string]map[string]interface{} `json:"handlers"`
 	Loggers                map[string]map[string]interface{} `json:"loggers"`

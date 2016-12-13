@@ -16,39 +16,27 @@ package logdog
 
 import "sync"
 
+const (
+	// RootLoggerName is the name of root logger
+	RootLoggerName = "root"
+)
+
 var (
 	mu = sync.Mutex{}
 	// set default logger
-	root = GetLogger("root")
+	root = GetLogger(RootLoggerName, Handlers(NewStreamHandler()))
 )
 
-// AddHandler is an alias of root.AddHandler
-func AddHandler(handlers ...Handler) *Logger {
-	root.AddHandler(handlers...)
+// AddHandlers is an alias of root.AddHandler
+func AddHandlers(handlers ...Handler) *Logger {
+	root.AddHandlers(handlers...)
 	return root
 }
 
-// EnableRuntimeCaller is an alias of root.EnableRuntimeCaller
-func EnableRuntimeCaller(enable bool) *Logger {
-	root.EnableRuntimeCaller(enable)
+// ApplyOptions is an alias of root.ApplyOptions
+func ApplyOptions(options ...Option) *Logger {
+	root.ApplyOptions(options...)
 	return root
-}
-
-// SetLevel is an alias of root.SetLevel
-func SetLevel(level Level) *Logger {
-	root.SetLevel(level)
-	return root
-}
-
-// SetFuncCallDepth is an alias of root.SetFuncCallDepth
-func SetFuncCallDepth(depth int) *Logger {
-	root.SetFuncCallDepth(depth)
-	return root
-}
-
-// Close is an alias of root.Close
-func Close(formatter Formatter) error {
-	return root.Close()
 }
 
 // Debugf is an alias of root.Debugf
@@ -131,8 +119,4 @@ func Fatal(args ...interface{}) {
 func Panic(msg string, args ...interface{}) {
 	root.log(FatalLevel, "", args...)
 	panic("CRITICAL")
-}
-
-func init() {
-	root.AddHandler(NewStreamHandler())
 }

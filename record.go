@@ -15,12 +15,19 @@
 package logdog
 
 import (
-	"bytes"
 	"fmt"
 	"path"
 	"strings"
 	"time"
 )
+
+// Use simple []byte instead of bytes.Buffer to avoid large dependency.
+type buffer []byte
+
+func (b *buffer) Write(p []byte) (int, error) {
+	*b = append(*b, p...)
+	return len(p), nil
+}
 
 // Fields is an alias to man[string]interface{}
 type Fields map[string]interface{}
@@ -32,11 +39,11 @@ func (f Fields) String() string {
 
 // ToKVString convert Fields to string likes k1=v1 k2=v2
 func (f Fields) ToKVString() string {
-	b := &bytes.Buffer{}
+	b := &buffer{}
 	for k, v := range f {
 		fmt.Fprintf(b, " %s=%+v", k, v)
 	}
-	return b.String()
+	return string(*b)
 }
 
 // LogRecord defines a real log record should be
@@ -88,15 +95,13 @@ func NewLogRecord(name string, level Level, pathname string, funcname string, li
 }
 
 // GetMessage formats record message by msg and args
-// if msg == "" {
-//     msg = fmt.Sprint(lr.Args...)
-// } else {
-//     msg = fmt.Sprintf(lr.Msg, lr.Args...)
-// }
 func (lr LogRecord) GetMessage() string {
 	msg := lr.Msg
+	buf := &buffer{}
 	if msg == "" {
-		msg = fmt.Sprint(lr.Args...)
+		fmt.Fprintln(buf, lr.Args...)
+		msg = string(*buf)
+		msg = msg[:len(msg)-1]
 	} else {
 		msg = fmt.Sprintf(lr.Msg, lr.Args...)
 	}

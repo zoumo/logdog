@@ -11,34 +11,19 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 package logdog
 
 import "testing"
+import "github.com/stretchr/testify/assert"
 
-func createLogger() *Logger {
-	return NewLogger(
-		Handlers(
-			NewStreamHandler(DiscardOutput()),
-		),
-	)
-}
-
-func BenchmarkLogWithoutFields(b *testing.B) {
-	b.ResetTimer()
-	logger := createLogger()
-	b.RunParallel(func(pb *testing.PB) {
-		for pb.Next() {
-			logger.Info("test")
-		}
-	})
-}
-
-func BenchmarkLogWithFields(b *testing.B) {
-	b.ResetTimer()
-	logger := createLogger()
-	b.RunParallel(func(pb *testing.PB) {
-		for pb.Next() {
-			logger.Info("test", smallFields)
-		}
-	})
+func TestOptionsInterface(t *testing.T) {
+	assert.Implements(t, (*Option)(nil), NoticeLevel)
+	assert.Implements(t, (*Option)(nil), NewTextFormatter())
+	assert.Implements(t, (*Option)(nil), NewJSONFormatter())
+	assert.Implements(t, (*Option)(nil), CallerStackDepth(1))
+	assert.Implements(t, (*Option)(nil), EnableRuntimeCaller(true))
+	assert.Implements(t, (*Option)(nil), Handlers())
+	assert.Implements(t, (*Option)(nil), Output(devNull(0)))
+	assert.Implements(t, (*Option)(nil), DiscardOutput())
 }

@@ -72,7 +72,7 @@ var largeFields = Fields{
 func TestTextFormatterLoadConfig(t *testing.T) {
 	formatter := NewTextFormatter()
 	formatter.LoadConfig(Config{
-		"enable_colors": true,
+		"enableColors": true,
 	})
 
 	assert.Equal(t, formatter.Fmt, DefaultFmtTemplate)

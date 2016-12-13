@@ -30,6 +30,7 @@ import (
 // Formatter is an interface which can convert a LogRecord to string
 type Formatter interface {
 	Format(*LogRecord) (string, error)
+	Option
 }
 
 // FormatTime returns the creation time of the specified LogRecord as formatted text.
@@ -156,7 +157,7 @@ func (tf *TextFormatter) LoadConfig(c map[string]interface{}) error {
 
 	tf.Fmt = config.MustGetString("fmt", DefaultFmtTemplate)
 	tf.DateFmt = config.MustGetString("datefmt", DefaultDateFmtTemplate)
-	tf.EnableColors = config.MustGetBool("enable_colors", false)
+	tf.EnableColors = config.MustGetBool("enableColors", false)
 
 	return nil
 

@@ -20,36 +20,49 @@ import (
 )
 
 func TestLogger(t *testing.T) {
-	logger := GetLogger("test")
-	logger.AddHandler(NewStreamHandler().discardOutput()).
-		SetLevel(InfoLevel).
-		SetFuncCallDepth(3)
+	logger := GetLogger(name)
+	logger.ApplyOptions(
+		Handlers(
+			NewStreamHandler(DiscardOutput()),
+		),
+		InfoLevel,
+		CallerStackDepth(3),
+	)
 
-	assert.Equal(t, "test", logger.Name)
+	assert.Equal(t, name, logger.Name)
 	assert.Len(t, logger.Handlers, 1)
 	assert.Equal(t, logger.Level, InfoLevel)
-	assert.Equal(t, 3, logger.funcCallDepth)
+	assert.Equal(t, 3, logger.CallerStackDepth)
 
-	// echo
-	logger.SetFuncCallDepth(2).EnableRuntimeCaller(true)
+	logger.ApplyOptions(
+		CallerStackDepth(2),
+		EnableRuntimeCaller(true),
+	)
 	logger.Debug("test debug") // filtered
 
-	logger.SetLevel(NothingLevel)
+	logger.ApplyOptions(NothingLevel)
 
 	logger.Debug("who is your daddy", Fields{"who": "jim"})
 	logger.Info("logdog is useful", Fields{"agree": "yes"})
 	logger.Warn("warning warning", Fields{"x": "man"})
 	logger.Notice("this notice is impotant", Fields{"x": "man"})
 	logger.Error("error error..", Fields{"x": "man"})
-	logger.Critical("I have no idea !", Fields{"x": "man"})
+	logger.Fatal("I have no idea !", Fields{"x": "man"})
 
+	logger2 := NewLogger(
+		Name("test2"),
+		EnableRuntimeCaller(true),
+		Level(InfoLevel),
+		CallerStackDepth(2),
+	)
+
+	assert.Equal(t, "test2", logger2.Name)
+	assert.True(t, logger2.EnableRuntimeCaller)
 }
 
 func TestJsonLogger(t *testing.T) {
-	logger := GetLogger("json").AddHandler(
-		NewStreamHandler().
-			SetFormatter(NewJSONFormatter()).
-			discardOutput(),
+	logger := GetLogger("json").AddHandlers(
+		NewStreamHandler(NewJSONFormatter(), DiscardOutput()),
 	)
 
 	logger.Info("this is json formatter1")

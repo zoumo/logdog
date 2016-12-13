@@ -104,9 +104,9 @@ func GetHandler(name string) Handler {
 
 // GetLogger returns an logger by name
 // if not, create one and add it to logger register
-func GetLogger(name string) *Logger {
+func GetLogger(name string, options ...Option) *Logger {
 	if name == "" {
-		name = "root"
+		name = RootLoggerName
 	}
 
 	var v interface{}
@@ -115,13 +115,8 @@ func GetLogger(name string) *Logger {
 		return v.(*Logger)
 	}
 
-	logger := new(Logger)
-	// set name
-	logger.Name = name
-	// default func call depth is 2
-	logger.funcCallDepth = DefaultFuncCallDepth
-	// enable analyze runtime caller
-	logger.runtimeCaller = true
+	options = append(options, Name(name))
+	logger := NewLogger(options...)
 
 	// check twice
 	// maybe sb. adds logger when this logger is creating
@@ -163,6 +158,6 @@ func DisableExistingLoggers() {
 
 	loggers = NewRegister()
 	// reset root
-	root = GetLogger("root")
-	root.AddHandler(NewStreamHandler())
+	root = GetLogger(RootLoggerName)
+	root.ApplyOptions(Handlers(NewStreamHandler()))
 }
