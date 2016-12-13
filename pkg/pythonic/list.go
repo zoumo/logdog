@@ -11,22 +11,27 @@ func NewList(capacity int) List {
 }
 
 // Append to the end of list
-func (l List) Append(item ...interface{}) List {
-	return append(l, item...)
+func (l *List) Append(item ...interface{}) List {
+	*l = append(*l, item...)
+	return *l
 }
 
 // Extend list with another list
-func (l List) Extend(list List) List {
-	return append(l, list...)
+func (l *List) Extend(list List) List {
+	*l = append(*l, list...)
+	return *l
 }
 
 // String convert list to a string
 func (l List) String() string {
 	buf := &bytes.Buffer{}
 	buf.WriteString("[")
-	for _, v := range l {
+	for i, v := range l {
 		buf.WriteString(spprint(v))
-		buf.WriteString(", ")
+		if i < len(l)-1 {
+			buf.WriteString(", ")
+
+		}
 	}
 	buf.WriteString("]")
 	return buf.String()

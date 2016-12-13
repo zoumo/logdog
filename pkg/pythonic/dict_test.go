@@ -22,7 +22,7 @@ func TestDict(t *testing.T) {
 
 func TestKey(t *testing.T) {
 	dict := Dict{"test": "test", 1: 1314, 1.1: 111}
-	assert.EqualValues(t, dict.Keys(), []interface{}{"test", 1, 1.1})
+	assert.EqualValues(t, []interface{}{"test", 1, 1.1}, dict.Keys())
 	assert.True(t, dict.HasKey("test"))
 	assert.False(t, dict.HasKey("test2"))
 	assert.False(t, dict.HasKey("1"))
