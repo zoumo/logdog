@@ -6,10 +6,16 @@ command_exists() {
     command -v "$@" > /dev/null 2>&1
 }
 
-if ! command_exists godep; then
-    go get github.com/tools/godep
+if ! command_exists glide; then
+    go get -u github.com/Masterminds/glide
+fi
+if ! command_exists glide-vc; then
+    go get -u github.com/sgotti/glide-vc
 fi
 
-godep get
+glide install --strip-vendor
 
-go test .
+glide-vc --use-lock-file --only-code --no-tests
+
+go test -cover $(go list ./... | grep -v '/vendor/' | grep -v '/tests/')
+
