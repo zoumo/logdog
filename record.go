@@ -40,9 +40,17 @@ func (f Fields) String() string {
 // ToKVString convert Fields to string likes k1=v1 k2=v2
 func (f Fields) ToKVString() string {
 	b := &buffer{}
+	fmt.Fprint(b, "{")
+	first := true
 	for k, v := range f {
-		fmt.Fprintf(b, " %s=%+v", k, v)
+		if first {
+			fmt.Fprintf(b, "%s=%+v", k, v)
+			first = false
+		} else {
+			fmt.Fprintf(b, " %s=%+v", k, v)
+		}
 	}
+	fmt.Fprint(b, "}")
 	return string(*b)
 }
 

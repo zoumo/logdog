@@ -176,7 +176,7 @@ func (tf *TextFormatter) parse() {
 	}
 
 	// append fields to Fmt no matter what it is
-	tf.Fmt += "%(color)%(fields)%(endColor)"
+	tf.Fmt += " %(color)%(fields)%(endColor)"
 
 	// replace %(field) with %s && add field name to sequence
 	// e.g. covert %(name) %(message) to %s %s
