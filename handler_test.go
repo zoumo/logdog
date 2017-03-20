@@ -40,10 +40,10 @@ func TestStreamHandler(t *testing.T) {
 func TestStreamHandlerApplyOption(t *testing.T) {
 	fmt := NewTextFormatter()
 	hdlr := NewStreamHandler(
-		Name(name),
+		OptionName(name),
 		DebugLevel,
 		fmt,
-		DiscardOutput(),
+		OptionDiscardOutput(),
 	)
 	assert.Equal(t, hdlr.Name, name)
 	assert.Equal(t, hdlr.Level, DebugLevel)
@@ -74,10 +74,10 @@ func TestFileHandler(t *testing.T) {
 func TestFileHandlerApplyOption(t *testing.T) {
 	fmt := NewTextFormatter()
 	hdlr := NewStreamHandler(
-		Name(name),
+		OptionName(name),
 		DebugLevel,
 		fmt,
-		DiscardOutput(),
+		OptionDiscardOutput(),
 	)
 	assert.Equal(t, hdlr.Name, name)
 	assert.Equal(t, hdlr.Level, DebugLevel)

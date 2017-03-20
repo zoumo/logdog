@@ -24,7 +24,7 @@ const (
 var (
 	mu = sync.Mutex{}
 	// set default logger
-	root = GetLogger(RootLoggerName, Handlers(NewStreamHandler()))
+	root = GetLogger(RootLoggerName, OptionHandlers(NewStreamHandler()))
 )
 
 // AddHandlers is an alias of root.AddHandler

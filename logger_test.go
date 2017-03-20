@@ -22,11 +22,11 @@ import (
 func TestLogger(t *testing.T) {
 	logger := GetLogger(name)
 	logger.ApplyOptions(
-		Handlers(
-			NewStreamHandler(DiscardOutput()),
+		OptionHandlers(
+			NewStreamHandler(OptionDiscardOutput()),
 		),
 		InfoLevel,
-		CallerStackDepth(3),
+		OptionCallerStackDepth(3),
 	)
 
 	assert.Equal(t, name, logger.Name)
@@ -35,8 +35,8 @@ func TestLogger(t *testing.T) {
 	assert.Equal(t, 3, logger.CallerStackDepth)
 
 	logger.ApplyOptions(
-		CallerStackDepth(2),
-		EnableRuntimeCaller(true),
+		OptionCallerStackDepth(2),
+		OptionEnableRuntimeCaller(true),
 	)
 	logger.Debug("test debug") // filtered
 
@@ -50,10 +50,10 @@ func TestLogger(t *testing.T) {
 	logger.Fatal("I have no idea !", Fields{"x": "man"})
 
 	logger2 := NewLogger(
-		Name("test2"),
-		EnableRuntimeCaller(true),
+		OptionName("test2"),
+		OptionEnableRuntimeCaller(true),
 		Level(InfoLevel),
-		CallerStackDepth(2),
+		OptionCallerStackDepth(2),
 	)
 
 	assert.Equal(t, "test2", logger2.Name)
@@ -62,7 +62,7 @@ func TestLogger(t *testing.T) {
 
 func TestJsonLogger(t *testing.T) {
 	logger := GetLogger("json").AddHandlers(
-		NewStreamHandler(NewJSONFormatter(), DiscardOutput()),
+		NewStreamHandler(NewJSONFormatter(), OptionDiscardOutput()),
 	)
 
 	logger.Info("this is json formatter1")

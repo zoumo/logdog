@@ -17,8 +17,8 @@ import "testing"
 
 func createLogger() *Logger {
 	return NewLogger(
-		Handlers(
-			NewStreamHandler(DiscardOutput()),
+		OptionHandlers(
+			NewStreamHandler(OptionDiscardOutput()),
 		),
 	)
 }

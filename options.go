@@ -66,9 +66,9 @@ func (fh *JSONFormatter) applyOption(target interface{}) bool {
 	return false
 }
 
-// Name is an option
+// OptionName is an option
 // used in every target which has fields named `Name`
-func Name(name string) Option {
+func OptionName(name string) Option {
 	return optFuncWraper(func(target interface{}) bool {
 		v := reflect.ValueOf(target).Elem()
 		if n := v.FieldByName("Name"); n.IsValid() {
@@ -79,9 +79,9 @@ func Name(name string) Option {
 	})
 }
 
-// CallerStackDepth is an option.
+// OptionCallerStackDepth is an option.
 // used in every target which has fields named `CallerStackDepth`
-func CallerStackDepth(depth int) Option {
+func OptionCallerStackDepth(depth int) Option {
 	return optFuncWraper(func(target interface{}) bool {
 		v := reflect.ValueOf(target).Elem()
 		if f := v.FieldByName("CallerStackDepth"); f.IsValid() {
@@ -94,7 +94,7 @@ func CallerStackDepth(depth int) Option {
 
 // EnableRuntimeCaller is an option useed in :
 // used in every target which has fields named `EnableRuntimeCaller`
-func EnableRuntimeCaller(enable bool) Option {
+func OptionEnableRuntimeCaller(enable bool) Option {
 	return optFuncWraper(func(target interface{}) bool {
 		v := reflect.ValueOf(target).Elem()
 		if f := v.FieldByName("EnableRuntimeCaller"); f.IsValid() {
@@ -105,9 +105,9 @@ func EnableRuntimeCaller(enable bool) Option {
 	})
 }
 
-// Handlers is an option
+// OtpionHandlers is an option
 // used in every target which has fields named `Handlers`
-func Handlers(handlers ...Handler) Option {
+func OptionHandlers(handlers ...Handler) Option {
 	return optFuncWraper(func(target interface{}) bool {
 		v := reflect.ValueOf(target).Elem()
 		if f := v.FieldByName("Handlers"); f.IsValid() {
@@ -121,9 +121,9 @@ func Handlers(handlers ...Handler) Option {
 	})
 }
 
-// Output is an option
+// OptionOutput is an option
 // used in every target which has fields named `Output`
-func Output(out io.WriteCloser) Option {
+func OptionOutput(out io.WriteCloser) Option {
 	return optFuncWraper(func(target interface{}) bool {
 		v := reflect.ValueOf(target).Elem()
 		if f := v.FieldByName("Output"); f.IsValid() {
@@ -134,10 +134,10 @@ func Output(out io.WriteCloser) Option {
 	})
 }
 
-// DiscardOutput is an option
+// OptionDiscardOutput is an option
 // used in every target which has fields named `Output`
 // and make all Read | Write | Close calls succeed without doing anything.
-func DiscardOutput() Option {
+func OptionDiscardOutput() Option {
 	return optFuncWraper(func(target interface{}) bool {
 		v := reflect.ValueOf(target).Elem()
 		if f := v.FieldByName("Output"); f.IsValid() {

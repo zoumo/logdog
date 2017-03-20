@@ -115,7 +115,7 @@ func GetLogger(name string, options ...Option) *Logger {
 		return v.(*Logger)
 	}
 
-	options = append(options, Name(name))
+	options = append(options, OptionName(name))
 	logger := NewLogger(options...)
 
 	// check twice
@@ -159,5 +159,5 @@ func DisableExistingLoggers() {
 	loggers = NewRegister()
 	// reset root
 	root = GetLogger(RootLoggerName)
-	root.ApplyOptions(Handlers(NewStreamHandler()))
+	root.ApplyOptions(OptionHandlers(NewStreamHandler()))
 }
