@@ -39,6 +39,11 @@ func (f Fields) String() string {
 
 // ToKVString convert Fields to string likes k1=v1 k2=v2
 func (f Fields) ToKVString() string {
+
+	if len(f) == 0 {
+		return ""
+	}
+
 	b := &buffer{}
 	fmt.Fprint(b, "{")
 	first := true
