@@ -48,6 +48,11 @@ func (f Fields) ToKVString() string {
 	fmt.Fprint(b, "{")
 	first := true
 	for k, v := range f {
+		// auto format time to RFC3339
+		if vv, ok := v.(time.Time); ok {
+			v = vv.Format(time.RFC3339)
+		}
+
 		if first {
 			fmt.Fprintf(b, "%s=%+v", k, v)
 			first = false
