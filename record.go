@@ -45,7 +45,7 @@ func (f Fields) ToKVString(color, endColor string) string {
 	}
 
 	b := &buffer{}
-	fmt.Fprint(b, "{")
+	fmt.Fprint(b, " | ")
 	first := true
 	for k, v := range f {
 		// auto format time to RFC3339
@@ -54,13 +54,13 @@ func (f Fields) ToKVString(color, endColor string) string {
 		}
 
 		if first {
-			fmt.Fprintf(b, "%s%s%s=%+v", color, k, endColor, v)
+			fmt.Fprintf(b, "%s=%s%+v%s", k, color, v, endColor)
 			first = false
 		} else {
-			fmt.Fprintf(b, " %s%s%s=%+v", color, k, endColor, v)
+			fmt.Fprintf(b, " %s=%s%+v%s", k, color, v, endColor)
 		}
 	}
-	fmt.Fprint(b, "}")
+
 	return string(*b)
 }
 
