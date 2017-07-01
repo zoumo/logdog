@@ -109,8 +109,7 @@ func GetLogger(name string, options ...Option) *Logger {
 		name = RootLoggerName
 	}
 
-	var v interface{}
-	v = loggers.Get(name)
+	v := loggers.Get(name)
 	if v != nil {
 		return v.(*Logger)
 	}
